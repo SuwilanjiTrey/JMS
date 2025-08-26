@@ -1,0 +1,111 @@
+rules_version = '2';
+service firebase.storage {
+  match /b/{bucket}/o {
+    // Helper functions
+    function isAdmin() {
+      return get(/databases/(default)/documents/users/$(request.auth.uid)).data.role == 'admin';
+    }
+    
+    function isJudge() {
+      return get(/databases/(default)/documents/users/$(request.auth.uid)).data.role == 'judge';
+    }
+    
+    function isLawyer() {
+      return get(/databases/(default)/documents/users/$(request.auth.uid)).data.role == 'lawyer';
+    }
+    
+    function isPublic() {
+      return get(/databases/(default)/documents/users/$(request.auth.uid)).data.role == 'public';
+    }
+    
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+    
+    function isActiveUser() {
+      return isAuthenticated() && 
+             get(/databases/(default)/documents/users/$(request.auth.uid)).data.isActive == true;
+    }
+    
+    function isOwner(userId) {
+      return request.auth.uid == userId;
+    }
+    
+    function hasPermission(permission) {
+      let userRole = get(/databases/(default)/documents/users/$(request.auth.uid)).data.role;
+      
+      // Admin permissions
+      if (userRole == 'admin') {
+        return permission in [
+          'upload:documents',
+          'read:documents',
+          'delete:documents'
+        ];
+      }
+      
+      // Judge permissions
+      if (userRole == 'judge') {
+        return permission in [
+          'upload:documents',
+          'read:documents'
+        ];
+      }
+      
+      // Lawyer permissions
+      if (userRole == 'lawyer') {
+        return permission in [
+          'upload:documents',
+          'read:documents'
+        ];
+      }
+      
+      // Public permissions
+      if (userRole == 'public') {
+        return permission in [
+          'read:documents'
+        ];
+      }
+      
+      return false;
+    }
+
+    // Case documents structure: /cases/{caseId}/documents/{documentId}
+    match /cases/{caseId}/documents/{documentId} {
+      allow read: if isActiveUser() && hasPermission('read:documents');
+      allow write: if isActiveUser() && hasPermission('upload:documents');
+      allow delete: if isActiveUser() && (isAdmin() || isOwner(request.auth.uid));
+    }
+    
+    // User profile pictures: /users/{userId}/profile/{imageId}
+    match /users/{userId}/profile/{imageId} {
+      allow read: if isActiveUser();
+      allow write: if isActiveUser() && (isAdmin() || isOwner(userId));
+      allow delete: if isActiveUser() && (isAdmin() || isOwner(userId));
+    }
+    
+    // System documents: /system/{documentId}
+    match /system/{documentId} {
+      allow read: if isActiveUser();
+      allow write: if isActiveUser() && isAdmin();
+      allow delete: if isActiveUser() && isAdmin();
+    }
+    
+    // Temporary uploads: /temp/{userId}/{uploadId}
+    match /temp/{userId}/{uploadId} {
+      allow read, write: if isActiveUser() && isOwner(userId);
+      allow delete: if isActiveUser() && (isAdmin() || isOwner(userId));
+    }
+    
+    // Public documents: /public/{documentId}
+    match /public/{documentId} {
+      allow read: if true; // Publicly readable
+      allow write: if isActiveUser() && isAdmin();
+      allow delete: if isActiveUser() && isAdmin();
+    }
+    
+    // Default deny all
+    match /{allPaths=**} {
+      allow read, write: if false;
+    }
+  }
+}

@@ -1,0 +1,117 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Helper functions
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+    
+    function getUserRole() {
+      return get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role;
+    }
+    
+    function hasPermission(role, permission) {
+      let rolePermissions = {
+        'admin': [
+          'read:cases', 'write:cases', 'delete:cases', 'assign:cases',
+          'update:rulings', 'manage:users', 'manage:calendar',
+          'upload:documents', 'read:documents', 'summarize:documents', 'search:cases'
+        ],
+        'judge': [
+          'read:cases', 'write:cases', 'update:rulings', 'manage:calendar',
+          'upload:documents', 'read:documents', 'summarize:documents', 'search:cases'
+        ],
+        'lawyer': [
+          'read:cases', 'write:cases', 'upload:documents', 'read:documents',
+          'summarize:documents', 'search:cases'
+        ],
+        'public': [
+          'read:cases', 'search:cases'
+        ]
+      };
+      return rolePermissions[role] != null && rolePermissions[role].hasAll([permission]);
+    }
+    
+    function isCaseOwner(caseId) {
+      let caseData = get(/databases/$(database)/documents/cases/$(caseId)).data;
+      return caseData.createdBy == request.auth.uid || 
+             caseData.assignedTo == request.auth.uid ||
+             caseData.lawyers.some(lawyer => lawyer.userId == request.auth.uid);
+    }
+    
+    function isCasePublic(caseId) {
+      let caseData = get(/databases/$(database)/documents/cases/$(caseId)).data;
+      return caseData.isPublic == true;
+    }
+
+    // Users collection rules
+    match /users/{userId} {
+      allow read: if isAuthenticated() && 
+                     (request.auth.uid == userId || 
+                      hasPermission(getUserRole(), 'manage:users'));
+      allow create: if isAuthenticated() && hasPermission(getUserRole(), 'manage:users');
+      allow update: if isAuthenticated() && 
+                     (request.auth.uid == userId || 
+                      hasPermission(getUserRole(), 'manage:users'));
+      allow delete: if isAuthenticated() && hasPermission(getUserRole(), 'manage:users');
+    }
+
+    // Cases collection rules
+    match /cases/{caseId} {
+      allow read: if isAuthenticated() && 
+                     (hasPermission(getUserRole(), 'read:cases') && 
+                      (isCaseOwner(caseId) || isCasePublic(caseId)));
+      allow create: if isAuthenticated() && hasPermission(getUserRole(), 'write:cases');
+      allow update: if isAuthenticated() && 
+                     (hasPermission(getUserRole(), 'write:cases') && 
+                      (isCaseOwner(caseId) || hasPermission(getUserRole(), 'assign:cases')));
+      allow delete: if isAuthenticated() && 
+                     hasPermission(getUserRole(), 'delete:cases') && 
+                     isCaseOwner(caseId);
+    }
+
+    // Hearings collection rules
+    match /hearings/{hearingId} {
+      allow read: if isAuthenticated() && hasPermission(getUserRole(), 'read:cases');
+      allow create: if isAuthenticated() && hasPermission(getUserRole(), 'manage:calendar');
+      allow update: if isAuthenticated() && hasPermission(getUserRole(), 'manage:calendar');
+      allow delete: if isAuthenticated() && hasPermission(getUserRole(), 'manage:calendar');
+    }
+
+    // Documents collection rules
+    match /documents/{documentId} {
+      allow read: if isAuthenticated() && 
+                     (hasPermission(getUserRole(), 'read:documents') || 
+                      (hasPermission(getUserRole(), 'read:cases') && 
+                       isCaseOwner(get(/databases/$(database)/documents/documents/$(documentId)).data.caseId)));
+      allow create: if isAuthenticated() && hasPermission(getUserRole(), 'upload:documents');
+      allow update: if isAuthenticated() && 
+                     (request.auth.uid == resource.data.uploadedBy || 
+                      hasPermission(getUserRole(), 'manage:users'));
+      allow delete: if isAuthenticated() && 
+                     (request.auth.uid == resource.data.uploadedBy || 
+                      hasPermission(getUserRole(), 'manage:users'));
+    }
+
+    // Rulings collection rules
+    match /rulings/{rulingId} {
+      allow read: if isAuthenticated() && hasPermission(getUserRole(), 'read:cases');
+      allow create: if isAuthenticated() && hasPermission(getUserRole(), 'update:rulings');
+      allow update: if isAuthenticated() && 
+                     (request.auth.uid == resource.data.judgeId || 
+                      hasPermission(getUserRole(), 'manage:users'));
+      allow delete: if isAuthenticated() && hasPermission(getUserRole(), 'manage:users');
+    }
+
+    // Roles collection rules (admin only)
+    match /roles/{roleId} {
+      allow read, create, update, delete: if isAuthenticated() && 
+                                            hasPermission(getUserRole(), 'manage:users');
+    }
+
+    // Public case search (aggregated queries)
+    match /cases {
+      allow list: if isAuthenticated() && hasPermission(getUserRole(), 'search:cases');
+    }
+  }
+}

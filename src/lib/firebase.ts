@@ -13,7 +13,6 @@ const firebaseConfig = {
   appId: process.env.NEXT_PUBLIC_FIREBASE_APP_ID || '1:123456789:web:abcdef123456',
 };
 
-// Initialize Firebase
 let app;
 try {
   app = initializeApp(firebaseConfig);

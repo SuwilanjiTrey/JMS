@@ -1,8 +1,8 @@
 import { 
   auth, 
   db, 
-  COLLECTIONS 
-} from './firebase';
+} from '../lib/constants/firebase/config';
+import { COLLECTIONS } from '../lib/constants/firebase/collections';
 import { 
   createUserWithEmailAndPassword, 
   signInWithEmailAndPassword, 
@@ -40,7 +40,7 @@ export const firebaseUserToAppUser = async (firebaseUser: FirebaseUser): Promise
       email: firebaseUser.email || '',
       displayName: firebaseUser.displayName || userData.displayName || '',
       role: userData.role,
-      photoURL: firebaseUser.photoURL,
+      photoURL: firebaseUser.photoURL || userData.photoURL || '',
       createdAt: userData.createdAt?.toDate() || new Date(),
       updatedAt: userData.updatedAt?.toDate() || new Date(),
       isActive: userData.isActive ?? true,

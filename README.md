@@ -297,6 +297,13 @@ FIREBASE_CLIENT_EMAIL=your_client_email
 FIREBASE_PROJECT_ID=your_project_id
 ```
 
+### Environment API keys
+create  a .env.local file in the directory root folder (the folder that has package.json, src and db)
+```env
+GOOGLE_API_KEY=THe_provided_api_key
+```
+
+
 ## 🤝 Contributing
 
 1. Fork the repository

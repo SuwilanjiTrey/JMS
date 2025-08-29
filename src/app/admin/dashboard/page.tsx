@@ -11,7 +11,7 @@ export default function AdminDashboard() {
           <h1 className="text-3xl font-bold text-zambia-black">Admin Dashboard</h1>
           <p className="text-zambia-black/70">Manage the judicial system</p>
         </div>
-        <Badge variant="outline" className="bg-zambia-orange text-white">
+        <Badge variant="outline" className="bg-zambia-orange text-black">
           Administrator
         </Badge>
       </div>

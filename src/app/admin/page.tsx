@@ -171,7 +171,7 @@ export default function EnhancedAdminPage() {
             <RefreshCw className="h-4 w-4" />
             <span>Refresh</span>
           </Button>
-          <Badge variant="outline" className="bg-zambia-orange text-white">
+          <Badge variant="outline" className="bg-green-700 text-white">
             System Administrator
           </Badge>
         </div>

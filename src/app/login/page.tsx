@@ -61,15 +61,15 @@ export default function LoginPage() {
   const getRoleBadgeColor = (role: UserRole) => {
     switch (role) {
       case 'admin':
-        return 'bg-zambia-orange text-white';
+        return 'bg-gray-100 text-black';
       case 'judge':
-        return 'bg-zambia-green text-white';
+        return 'bg-gray-100 text-black';
       case 'lawyer':
-        return 'bg-blue-100 text-blue-800';
+        return 'bg-gray-100 text-black-800';
       case 'public':
-        return 'bg-gray-100 text-gray-800';
+        return 'bg-gray-100 text-black-800';
       default:
-        return 'bg-gray-100 text-gray-800';
+        return 'bg-gray-100 text-black-800';
     }
   };
 

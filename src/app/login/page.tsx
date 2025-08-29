@@ -172,7 +172,7 @@ export default function LoginPage() {
 
               <Button
                 type="submit"
-                className="w-full bg-zambia-orange hover:bg-zambia-orange/90"
+                className="w-full bg-orange-600 hover:bg-orange-500"
                 disabled={isLoading}
               >
                 {isLoading ? 'Signing in...' : 'Sign In'}

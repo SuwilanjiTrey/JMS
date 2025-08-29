@@ -15,19 +15,77 @@ import {
 import { db } from '../../constants/firebase/config'
 
 
+// Helper function to remove undefined values from objects
+const removeUndefinedFields = (obj: any): any => {
+    if (obj === null || obj === undefined || typeof obj !== 'object') {
+        return obj;
+    }
+
+    if (Array.isArray(obj)) {
+        return obj.map(item => removeUndefinedFields(item));
+    }
+
+    if (obj instanceof Date) {
+        return obj;
+    }
+
+    const cleaned: any = {};
+
+    for (const [key, value] of Object.entries(obj)) {
+        if (value !== undefined) {
+            if (value && typeof value === 'object' && !Array.isArray(value) && !(value instanceof Date)) {
+                // Recursively clean nested objects
+                const cleanedNested = removeUndefinedFields(value);
+                if (Object.keys(cleanedNested).length > 0) {
+                    cleaned[key] = cleanedNested;
+                }
+            } else {
+                cleaned[key] = value;
+            }
+        }
+    }
+
+    return cleaned;
+};
+
+
 export async function uploadData(collectionName: string, data: any): Promise<boolean> {
     let uploaded = false
     try {
-        // TODO: if id then use it as docID
-        const docRef = await addDoc(collection(db, collectionName), data);
-        // console.log("Document written with ID: ", docRef.id);
+        // Clean the data before uploading
+        const cleanedData = removeUndefinedFields(data);
+        const docRef = await addDoc(collection(db, collectionName), cleanedData);
         uploaded = true
     } catch (e) {
-        // TODO: properly handle errors
         console.error("Error adding document: ", e);
     }
 
     return uploaded
+}
+
+export async function setDetails(item: any, collectionName: string, id: string | number) {
+    if (!collectionName || !id) {
+        console.error("Collection name or document ID is missing.");
+        return { success: false, error: "Invalid collection name or document ID." };
+    }
+
+    try {
+        // Clean the data before setting
+        const cleanedItem = removeUndefinedFields(item);
+
+        const docRef = doc(db, collectionName, `${id}`);
+        await setDoc(docRef, cleanedItem);
+
+        return { success: true, id };
+    } catch (error) {
+        if (error instanceof Error) {
+            console.error("Error setting document: ", error.message);
+            return { success: false, error: error.message };
+        } else {
+            console.error("Unknown error setting document: ", error);
+            return { success: false, error: "Unknown error occurred." };
+        }
+    }
 }
 
 
@@ -87,31 +145,6 @@ export async function fetchData(collectionName:string, count?:number) {
         });
     }
    return data
-}
-
-
-
-export async function setDetails(item: any, collectionName: string, id: string | number) {
-    if (!collectionName || !id) {
-        console.error("Collection name or document ID is missing.");
-        return { success: false, error: "Invalid collection name or document ID." };
-    }
-
-    try {
-        // Ensure the collectionName and id together create a valid document path.
-        const docRef = doc(db, collectionName, `${id}`);
-        await setDoc(docRef, item);
-
-        return { success: true, id };
-    } catch (error) {
-        if (error instanceof Error) {
-            console.error("Error setting document: ", error.message);
-            return { success: false, error: error.message };
-        } else {
-            console.error("Unknown error setting document: ", error);
-            return { success: false, error: "Unknown error occurred." };
-        }
-    }
 }
 
 export async function setDetailsOfMany(items: any[], collectionName: string) {

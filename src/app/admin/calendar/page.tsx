@@ -247,197 +247,198 @@ export default function AdminCalendar() {
           <p className="text-zambia-black/70">Manage court schedules and hearings</p>
         </div>
 
-        <Dialog open={showScheduleModal} onOpenChange={setShowScheduleModal}>
-          <DialogTrigger asChild>
-            <Button className="bg-zambia-orange hover:bg-zambia-orange/90">
-              Schedule Hearing
-            </Button>
-          </DialogTrigger>
-          <DialogContent className="max-w-md">
-            <DialogHeader>
-              <DialogTitle>Schedule New Hearing</DialogTitle>
-              <DialogDescription>
-                Create a new court hearing appointment
-              </DialogDescription>
-            </DialogHeader>
-            <div className="space-y-4">
-              <div>
-                <Label htmlFor="case">Select Case *</Label>
-                <Select
-                  value={selectedCase?.id || ''}
-                  onValueChange={handleCaseSelect}
-                  disabled={loadingCases}
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder={loadingCases ? "Loading cases..." : "Select a case"} />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {activeCases.map((case_) => (
-                      <SelectItem key={case_.id} value={case_.id}>
-                        <div className="flex flex-col">
-                          <span className="font-medium">{case_.caseNumber}</span>
-                          <span className="text-sm text-gray-500 truncate">{case_.title}</span>
-                        </div>
-                      </SelectItem>
-                    ))}
-                    {activeCases.length === 0 && (
-                      <SelectItem value="no-cases" disabled>
-                        No active cases available
-                      </SelectItem>
-                    )}
-                  </SelectContent>
-                </Select>
-              </div>
+       
+          <Dialog open={showScheduleModal} onOpenChange={setShowScheduleModal}>
+            <DialogTrigger asChild>
+              <Button className="bg-zambia-orange hover:bg-zambia-orange/90">
+                Schedule Hearing
+              </Button>
+            </DialogTrigger>
+          <DialogContent className="max-w-md max-h-[90vh] overflow-y-auto">
+              <DialogHeader>
+                <DialogTitle>Schedule New Hearing</DialogTitle>
+                <DialogDescription>
+                  Create a new court hearing appointment
+                </DialogDescription>
+              </DialogHeader>
+              <div className="space-y-4">
+                <div>
+                  <Label htmlFor="case">Select Case *</Label>
+                  <Select
+                    value={selectedCase?.id || ''}
+                    onValueChange={handleCaseSelect}
+                    disabled={loadingCases}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder={loadingCases ? "Loading cases..." : "Select a case"} />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {activeCases.map((case_) => (
+                        <SelectItem key={case_.id} value={case_.id}>
+                          <div className="flex flex-col">
+                            <span className="font-medium">{case_.caseNumber}</span>
+                            <span className="text-sm text-gray-500 truncate">{case_.title}</span>
+                          </div>
+                        </SelectItem>
+                      ))}
+                      {activeCases.length === 0 && (
+                        <SelectItem value="no-cases" disabled>
+                          No active cases available
+                        </SelectItem>
+                      )}
+                    </SelectContent>
+                  </Select>
+                </div>
 
-              {selectedCase && (
-                <div className="p-3 bg-gray-50 rounded-lg">
-                  <h4 className="font-medium text-sm mb-2">Case Details</h4>
-                  <div className="space-y-1 text-xs">
-                    <div><span className="font-medium">Case Number:</span> {selectedCase.caseNumber}</div>
-                    <div><span className="font-medium">Title:</span> {selectedCase.title}</div>
-                    <div><span className="font-medium">Type:</span> {selectedCase.type}</div>
-                    <div><span className="font-medium">Status:</span> {selectedCase.status}</div>
-                    <div><span className="font-medium">Priority:</span> {selectedCase.priority}</div>
+                {selectedCase && (
+                  <div className="p-3 bg-gray-50 rounded-lg">
+                    <h4 className="font-medium text-sm mb-2">Case Details</h4>
+                    <div className="space-y-1 text-xs">
+                      <div><span className="font-medium">Case Number:</span> {selectedCase.caseNumber}</div>
+                      <div><span className="font-medium">Title:</span> {selectedCase.title}</div>
+                      <div><span className="font-medium">Type:</span> {selectedCase.type}</div>
+                      <div><span className="font-medium">Status:</span> {selectedCase.status}</div>
+                      <div><span className="font-medium">Priority:</span> {selectedCase.priority}</div>
+                    </div>
+                  </div>
+                )}
+
+                <div>
+                  <Label htmlFor="caseNumber">Case Number *</Label>
+                  <Input
+                    id="caseNumber"
+                    value={newHearing.caseNumber || ''}
+                    onChange={(e) => setNewHearing({ ...newHearing, caseNumber: e.target.value })}
+                    placeholder="e.g., CV-2024-001"
+                    disabled={!!selectedCase}
+                  />
+                </div>
+
+                <div>
+                  <Label htmlFor="title">Case Title *</Label>
+                  <Input
+                    id="title"
+                    value={newHearing.title || ''}
+                    onChange={(e) => setNewHearing({ ...newHearing, title: e.target.value })}
+                    placeholder="e.g., Smith vs. Johnson"
+                    disabled={!!selectedCase}
+                  />
+                </div>
+
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <Label htmlFor="date">Date *</Label>
+                    <Input
+                      id="date"
+                      type="date"
+                      value={newHearing.date || ''}
+                      onChange={(e) => setNewHearing({ ...newHearing, date: e.target.value })}
+                    />
+                  </div>
+
+                  <div>
+                    <Label htmlFor="time">Time *</Label>
+                    <Input
+                      id="time"
+                      type="time"
+                      value={newHearing.time || ''}
+                      onChange={(e) => setNewHearing({ ...newHearing, time: e.target.value })}
+                    />
                   </div>
                 </div>
-              )}
 
-              <div>
-                <Label htmlFor="caseNumber">Case Number *</Label>
-                <Input
-                  id="caseNumber"
-                  value={newHearing.caseNumber || ''}
-                  onChange={(e) => setNewHearing({ ...newHearing, caseNumber: e.target.value })}
-                  placeholder="e.g., CV-2024-001"
-                  disabled={!!selectedCase}
-                />
-              </div>
-
-              <div>
-                <Label htmlFor="title">Case Title *</Label>
-                <Input
-                  id="title"
-                  value={newHearing.title || ''}
-                  onChange={(e) => setNewHearing({ ...newHearing, title: e.target.value })}
-                  placeholder="e.g., Smith vs. Johnson"
-                  disabled={!!selectedCase}
-                />
-              </div>
-
-              <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <Label htmlFor="date">Date *</Label>
-                  <Input
-                    id="date"
-                    type="date"
-                    value={newHearing.date || ''}
-                    onChange={(e) => setNewHearing({ ...newHearing, date: e.target.value })}
-                  />
+                  <Label htmlFor="location">Location</Label>
+                  <Select value={newHearing.location} onValueChange={(value) => setNewHearing({ ...newHearing, location: value })}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select courtroom" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="Courtroom 1">Courtroom 1</SelectItem>
+                      <SelectItem value="Courtroom 2">Courtroom 2</SelectItem>
+                      <SelectItem value="Courtroom 3">Courtroom 3</SelectItem>
+                      <SelectItem value="Virtual">Virtual Hearing</SelectItem>
+                    </SelectContent>
+                  </Select>
                 </div>
 
                 <div>
-                  <Label htmlFor="time">Time *</Label>
-                  <Input
-                    id="time"
-                    type="time"
-                    value={newHearing.time || ''}
-                    onChange={(e) => setNewHearing({ ...newHearing, time: e.target.value })}
+                  <Label htmlFor="purpose">Purpose</Label>
+                  <Select value={newHearing.purpose} onValueChange={(value) => setNewHearing({ ...newHearing, purpose: value })}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select hearing purpose" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="Initial Hearing">Initial Hearing</SelectItem>
+                      <SelectItem value="Pre-trial Conference">Pre-trial Conference</SelectItem>
+                      <SelectItem value="Trial">Trial</SelectItem>
+                      <SelectItem value="Sentencing">Sentencing</SelectItem>
+                      <SelectItem value="Motion Hearing">Motion Hearing</SelectItem>
+                      <SelectItem value="Status Conference">Status Conference</SelectItem>
+                      <SelectItem value="Settlement Conference">Settlement Conference</SelectItem>
+                      <SelectItem value="Bail Hearing">Bail Hearing</SelectItem>
+                      <SelectItem value="Other">Other</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div>
+                  <Label htmlFor="judge">Judge</Label>
+                  <Select value={newHearing.judge} onValueChange={(value) => setNewHearing({ ...newHearing, judge: value })}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select judge" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="Judge Mwansa">Judge Mwansa</SelectItem>
+                      <SelectItem value="Judge Phiri">Judge Phiri</SelectItem>
+                      <SelectItem value="Judge Tembo">Judge Tembo</SelectItem>
+                      <SelectItem value="Judge Banda">Judge Banda</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div>
+                  <Label htmlFor="priority">Priority</Label>
+                  <Select value={newHearing.priority} onValueChange={(value) => setNewHearing({ ...newHearing, priority: value as 'low' | 'medium' | 'high' | 'urgent' })}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select priority" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="low">Low</SelectItem>
+                      <SelectItem value="medium">Medium</SelectItem>
+                      <SelectItem value="high">High</SelectItem>
+                      <SelectItem value="urgent">Urgent</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div>
+                  <Label htmlFor="description">Description</Label>
+                  <Textarea
+                    id="description"
+                    value={newHearing.description || ''}
+                    onChange={(e) => setNewHearing({ ...newHearing, description: e.target.value })}
+                    placeholder="Additional notes or details"
+                    rows={3}
                   />
                 </div>
-              </div>
 
-              <div>
-                <Label htmlFor="location">Location</Label>
-                <Select value={newHearing.location} onValueChange={(value) => setNewHearing({ ...newHearing, location: value })}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select courtroom" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="Courtroom 1">Courtroom 1</SelectItem>
-                    <SelectItem value="Courtroom 2">Courtroom 2</SelectItem>
-                    <SelectItem value="Courtroom 3">Courtroom 3</SelectItem>
-                    <SelectItem value="Virtual">Virtual Hearing</SelectItem>
-                  </SelectContent>
-                </Select>
+                <div className="flex gap-2">
+                  <Button onClick={handleCreateHearing} className="flex-1">
+                    Create Hearing
+                  </Button>
+                  <Button variant="outline" onClick={() => {
+                    setShowScheduleModal(false);
+                    setNewHearing({ status: 'scheduled' });
+                    setSelectedDate(null);
+                    setSelectedCase(null);
+                  }}>
+                    Cancel
+                  </Button>
+                </div>
               </div>
-
-              <div>
-                <Label htmlFor="purpose">Purpose</Label>
-                <Select value={newHearing.purpose} onValueChange={(value) => setNewHearing({ ...newHearing, purpose: value })}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select hearing purpose" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="Initial Hearing">Initial Hearing</SelectItem>
-                    <SelectItem value="Pre-trial Conference">Pre-trial Conference</SelectItem>
-                    <SelectItem value="Trial">Trial</SelectItem>
-                    <SelectItem value="Sentencing">Sentencing</SelectItem>
-                    <SelectItem value="Motion Hearing">Motion Hearing</SelectItem>
-                    <SelectItem value="Status Conference">Status Conference</SelectItem>
-                    <SelectItem value="Settlement Conference">Settlement Conference</SelectItem>
-                    <SelectItem value="Bail Hearing">Bail Hearing</SelectItem>
-                    <SelectItem value="Other">Other</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-
-              <div>
-                <Label htmlFor="judge">Judge</Label>
-                <Select value={newHearing.judge} onValueChange={(value) => setNewHearing({ ...newHearing, judge: value })}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select judge" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="Judge Mwansa">Judge Mwansa</SelectItem>
-                    <SelectItem value="Judge Phiri">Judge Phiri</SelectItem>
-                    <SelectItem value="Judge Tembo">Judge Tembo</SelectItem>
-                    <SelectItem value="Judge Banda">Judge Banda</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-
-              <div>
-                <Label htmlFor="priority">Priority</Label>
-                <Select value={newHearing.priority} onValueChange={(value) => setNewHearing({ ...newHearing, priority: value as 'low' | 'medium' | 'high' | 'urgent' })}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select priority" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="low">Low</SelectItem>
-                    <SelectItem value="medium">Medium</SelectItem>
-                    <SelectItem value="high">High</SelectItem>
-                    <SelectItem value="urgent">Urgent</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-
-              <div>
-                <Label htmlFor="description">Description</Label>
-                <Textarea
-                  id="description"
-                  value={newHearing.description || ''}
-                  onChange={(e) => setNewHearing({ ...newHearing, description: e.target.value })}
-                  placeholder="Additional notes or details"
-                  rows={3}
-                />
-              </div>
-
-              <div className="flex gap-2">
-                <Button onClick={handleCreateHearing} className="flex-1">
-                  Create Hearing
-                </Button>
-                <Button variant="outline" onClick={() => {
-                  setShowScheduleModal(false);
-                  setNewHearing({ status: 'scheduled' });
-                  setSelectedDate(null);
-                  setSelectedCase(null);
-                }}>
-                  Cancel
-                </Button>
-              </div>
-            </div>
-          </DialogContent>
-        </Dialog>
+            </DialogContent>
+          </Dialog>
       </div>
 
       {/* Calendar Overview */}

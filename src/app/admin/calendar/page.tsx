@@ -11,10 +11,13 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Textarea } from '@/components/ui/textarea';
 import { Calendar as CalendarIcon, Clock, MapPin, User } from 'lucide-react';
 import Calendar from '@/components/Calendar';
-import { uploadData, fetchData, deleteData } from '@/lib/utils/firebase/general';
+import { uploadData, fetchData, deleteData, getAll } from '@/lib/utils/firebase/general';
+import { COLLECTIONS } from '@/lib/constants/firebase/collections';
+import { Case } from '@/models/Case';
 
 interface Hearing {
   id: string;
+  caseId: string;
   caseNumber: string;
   title: string;
   date: string;
@@ -25,6 +28,7 @@ interface Hearing {
   description?: string;
   participants?: string[];
   priority?: 'low' | 'medium' | 'high' | 'urgent';
+  purpose?: string;
 }
 
 interface CalendarEvent {
@@ -41,27 +45,43 @@ interface CalendarEvent {
 
 export default function AdminCalendar() {
   const [hearings, setHearings] = useState<Hearing[]>([]);
+  const [cases, setCases] = useState<Case[]>([]);
   const [loading, setLoading] = useState(true);
+  const [loadingCases, setLoadingCases] = useState(false);
   const [showScheduleModal, setShowScheduleModal] = useState(false);
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
+  const [selectedCase, setSelectedCase] = useState<Case | null>(null);
   const [newHearing, setNewHearing] = useState<Partial<Hearing>>({
     status: 'scheduled'
   });
 
-  // Load hearings from Firebase on component mount
+  // Load hearings and cases from Firebase on component mount
   useEffect(() => {
     loadHearings();
+    loadCases();
   }, []);
 
   const loadHearings = async () => {
     try {
       setLoading(true);
-      const data = await fetchData('hearings');
+      const data = await fetchData(COLLECTIONS.HEARINGS);
       setHearings(data || []);
     } catch (error) {
       console.error('Error loading hearings:', error);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const loadCases = async () => {
+    try {
+      setLoadingCases(true);
+      const data = await getAll(COLLECTIONS.CASES);
+      setCases((data || []) as Case[]);
+    } catch (error) {
+      console.error('Error loading cases:', error);
+    } finally {
+      setLoadingCases(false);
     }
   };
 
@@ -89,7 +109,26 @@ export default function AdminCalendar() {
   // Filter today's hearings
   const todaysHearings = hearings.filter(h => h.date === today);
 
-  // Handle calendar date click
+  // Get active cases for selection
+  const activeCases = cases.filter(case_ =>
+    case_.status === 'active' || case_.status === 'pending'
+  );
+
+  // Handle case selection
+  const handleCaseSelect = (caseId: string) => {
+    const case_ = cases.find(c => c.id === caseId);
+    if (case_) {
+      setSelectedCase(case_);
+      setNewHearing({
+        ...newHearing,
+        caseNumber: case_.caseNumber,
+        title: case_.title,
+        priority: case_.priority
+      });
+    }
+  };
+
+  // Handle date click
   const handleDateClick = (date: Date) => {
     setSelectedDate(date);
     setNewHearing({
@@ -112,14 +151,20 @@ export default function AdminCalendar() {
 
   // Handle new hearing creation
   const handleCreateHearing = async () => {
-    if (!newHearing.caseNumber || !newHearing.title || !newHearing.date || !newHearing.time) {
-      alert('Please fill in all required fields');
+    if (!selectedCase) {
+      alert('Please select a case first');
+      return;
+    }
+
+    if (!newHearing.date || !newHearing.time) {
+      alert('Please fill in date and time');
       return;
     }
 
     try {
       const hearingToCreate: Hearing = {
-        id: Date.now().toString(), // Simple ID generation - you might want to use a better method
+        id: Date.now().toString(),
+        caseId: selectedCase?.id || '',
         caseNumber: newHearing.caseNumber!,
         title: newHearing.title!,
         date: newHearing.date!,
@@ -129,16 +174,18 @@ export default function AdminCalendar() {
         status: newHearing.status as 'scheduled',
         description: newHearing.description,
         participants: newHearing.participants,
-        priority: newHearing.priority || 'medium'
+        priority: newHearing.priority || 'medium',
+        purpose: newHearing.purpose || 'Hearing'
       };
 
-      const success = await uploadData('hearings', hearingToCreate);
+      const success = await uploadData(COLLECTIONS.HEARINGS, hearingToCreate);
 
       if (success) {
         setHearings([...hearings, hearingToCreate]);
         setShowScheduleModal(false);
         setNewHearing({ status: 'scheduled' });
         setSelectedDate(null);
+        setSelectedCase(null);
         alert('Hearing scheduled successfully!');
       } else {
         alert('Failed to create hearing. Please try again.');
@@ -154,7 +201,7 @@ export default function AdminCalendar() {
     if (!confirm('Are you sure you want to delete this hearing?')) return;
 
     try {
-      const result = await deleteData('hearings', hearingId);
+      const result = await deleteData(COLLECTIONS.HEARINGS, hearingId);
 
       if (result.success) {
         setHearings(hearings.filter(h => h.id !== hearingId));
@@ -215,12 +262,54 @@ export default function AdminCalendar() {
             </DialogHeader>
             <div className="space-y-4">
               <div>
+                <Label htmlFor="case">Select Case *</Label>
+                <Select
+                  value={selectedCase?.id || ''}
+                  onValueChange={handleCaseSelect}
+                  disabled={loadingCases}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder={loadingCases ? "Loading cases..." : "Select a case"} />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {activeCases.map((case_) => (
+                      <SelectItem key={case_.id} value={case_.id}>
+                        <div className="flex flex-col">
+                          <span className="font-medium">{case_.caseNumber}</span>
+                          <span className="text-sm text-gray-500 truncate">{case_.title}</span>
+                        </div>
+                      </SelectItem>
+                    ))}
+                    {activeCases.length === 0 && (
+                      <SelectItem value="no-cases" disabled>
+                        No active cases available
+                      </SelectItem>
+                    )}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              {selectedCase && (
+                <div className="p-3 bg-gray-50 rounded-lg">
+                  <h4 className="font-medium text-sm mb-2">Case Details</h4>
+                  <div className="space-y-1 text-xs">
+                    <div><span className="font-medium">Case Number:</span> {selectedCase.caseNumber}</div>
+                    <div><span className="font-medium">Title:</span> {selectedCase.title}</div>
+                    <div><span className="font-medium">Type:</span> {selectedCase.type}</div>
+                    <div><span className="font-medium">Status:</span> {selectedCase.status}</div>
+                    <div><span className="font-medium">Priority:</span> {selectedCase.priority}</div>
+                  </div>
+                </div>
+              )}
+
+              <div>
                 <Label htmlFor="caseNumber">Case Number *</Label>
                 <Input
                   id="caseNumber"
                   value={newHearing.caseNumber || ''}
                   onChange={(e) => setNewHearing({ ...newHearing, caseNumber: e.target.value })}
                   placeholder="e.g., CV-2024-001"
+                  disabled={!!selectedCase}
                 />
               </div>
 
@@ -231,6 +320,7 @@ export default function AdminCalendar() {
                   value={newHearing.title || ''}
                   onChange={(e) => setNewHearing({ ...newHearing, title: e.target.value })}
                   placeholder="e.g., Smith vs. Johnson"
+                  disabled={!!selectedCase}
                 />
               </div>
 
@@ -267,6 +357,26 @@ export default function AdminCalendar() {
                     <SelectItem value="Courtroom 2">Courtroom 2</SelectItem>
                     <SelectItem value="Courtroom 3">Courtroom 3</SelectItem>
                     <SelectItem value="Virtual">Virtual Hearing</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div>
+                <Label htmlFor="purpose">Purpose</Label>
+                <Select value={newHearing.purpose} onValueChange={(value) => setNewHearing({ ...newHearing, purpose: value })}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select hearing purpose" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="Initial Hearing">Initial Hearing</SelectItem>
+                    <SelectItem value="Pre-trial Conference">Pre-trial Conference</SelectItem>
+                    <SelectItem value="Trial">Trial</SelectItem>
+                    <SelectItem value="Sentencing">Sentencing</SelectItem>
+                    <SelectItem value="Motion Hearing">Motion Hearing</SelectItem>
+                    <SelectItem value="Status Conference">Status Conference</SelectItem>
+                    <SelectItem value="Settlement Conference">Settlement Conference</SelectItem>
+                    <SelectItem value="Bail Hearing">Bail Hearing</SelectItem>
+                    <SelectItem value="Other">Other</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
@@ -320,6 +430,7 @@ export default function AdminCalendar() {
                   setShowScheduleModal(false);
                   setNewHearing({ status: 'scheduled' });
                   setSelectedDate(null);
+                  setSelectedCase(null);
                 }}>
                   Cancel
                 </Button>

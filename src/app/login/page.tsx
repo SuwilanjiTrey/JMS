@@ -91,15 +91,15 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-zambia-orange/10 to-zambia-green/10 flex items-center justify-center p-4">
+    <div className="min-h-screen bg-gradient-to-br flex items-center justify-center p-4w-full ">
       <div className="w-full max-w-md space-y-6">
         {/* Logo and Title */}
         <div className="text-center">
           <div className="flex items-center justify-center mb-4">
-            <Gavel className="h-12 w-12 text-zambia-orange" />
+            <Gavel className="h-12 w-12 text-zambia-black/70" />
           </div>
-          <h1 className="text-3xl font-bold text-zambia-black">Judicial Management System</h1>
-          <p className="text-zambia-black/70 mt-2">Republic of Zambia</p>
+          <h1 className="text-3xl font-bold text-orange-600 hover:text-orange-500">Judicial Management System</h1>
+          <p className="text-green-600 hover:text-green-500 mt-2">Republic of Zambia</p>
         </div>
 
         {/* Login Form */}
@@ -172,7 +172,7 @@ export default function LoginPage() {
 
               <Button
                 type="submit"
-                className="w-full bg-orange-600 hover:bg-orange-500"
+                className="w-full bg-orange-600 hover:bg-green-700 hover:bg-green-800 text-white w-full bg-red-600 hover:bg-red-700 text-white"
                 disabled={isLoading}
               >
                 {isLoading ? 'Signing in...' : 'Sign In'}

@@ -124,7 +124,7 @@ What would you like assistance with today?`,
         setIsLoading(true);
 
         try {
-            // Simulate AI processing with context awareness
+            // Process AI query with context awareness
             const aiResponse = await processAIQuery(inputValue, appContext);
 
             const aiMessage: Message = {
@@ -150,156 +150,32 @@ What would you like assistance with today?`,
     };
 
     const processAIQuery = async (query: string, context: any) => {
-        // This would integrate with your actual AI service
-        // For now, we'll simulate intelligent responses based on query patterns
+        try {
+            const res = await fetch('/api/ai', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ query, context }),
+            });
 
-        const lowerQuery = query.toLowerCase();
+            if (!res.ok) {
+                const errorData = await res.json().catch(() => ({ error: 'Unknown error' }));
+                throw new Error(`AI API error: ${res.status} - ${errorData.error || 'Request failed'}`);
+            }
 
-        if (lowerQuery.includes('summarize') || lowerQuery.includes('summary')) {
+            const data = await res.json();
+            const responseText = data.text || data.response || data.message || 'No response received';
+
             return {
-                content: `Based on your system data, here's a comprehensive summary:
-
-**Current Case Load:**
-- Total Cases: ${context?.totalCases || 0}
-- Active Cases: ${context?.activeCases || 0}
-- Pending Hearings: ${context?.pendingHearings || 0}
-
-**Key Insights:**
-- Average case processing time has improved by 15% this month
-- Judge workload is optimally distributed with no overallocation
-- Document processing efficiency is at 92%
-
-**Recommendations:**
-1. Consider scheduling additional hearings for pending cases
-2. Review older cases for potential expedited resolution
-3. Monitor upcoming parliamentary changes that may affect active cases`,
-                context: {
-                    relatedCases: context?.cases?.slice(0, 5).map((c: any) => c.id) || []
-                }
+                content: responseText,
+                context: {} // Later: parse structured data if needed
+            };
+        } catch (err) {
+            console.error("AI error:", err);
+            return {
+                content: "Sorry, I had trouble generating an answer. Please try again later.",
+                context: {}
             };
         }
-
-        if (lowerQuery.includes('case') && lowerQuery.includes('analysis')) {
-            const recentCases = context?.cases?.slice(0, 3) || [];
-            return {
-                content: `**Case Analysis Report:**
-
-Recent cases show the following patterns:
-
-${recentCases.map((c: any, i: number) => `
-**Case ${i + 1}: ${c.title || 'Untitled Case'}**
-- Status: ${c.status || 'Unknown'}
-- Type: ${c.type || 'General'}
-- Priority: ${c.priority || 'Standard'}
-- Progress: ${c.progress || 0}%
-`).join('')}
-
-**Predictive Insights:**
-- Cases with similar profiles typically resolve in 45-60 days
-- Current caseload suggests optimal resource allocation
-- No bottlenecks detected in the workflow pipeline`,
-                context: {
-                    relatedCases: recentCases.map((c: any) => c.id)
-                }
-            };
-        }
-
-        if (lowerQuery.includes('document')) {
-            return {
-                content: `**Document Management Overview:**
-
-**Processing Status:**
-- Documents in queue: 12
-- Processed today: 34
-- Pending signatures: 8
-- Archive requests: 3
-
-**AI Document Analysis:**
-- Automated categorization accuracy: 96%
-- Duplicate detection: 5 documents flagged
-- Compliance check: All documents meet standards
-
-**Recommendations:**
-1. Prioritize documents requiring urgent signatures
-2. Review flagged duplicates for consolidation
-3. Consider batch processing for efficiency
-
-Would you like me to analyze specific documents or provide detailed insights on any particular document type?`,
-                context: {
-                    documentId: 'recent_batch'
-                }
-            };
-        }
-
-        if (lowerQuery.includes('parliament') || lowerQuery.includes('law')) {
-            return {
-                content: `**Parliamentary Updates & Legal Impact Analysis:**
-
-**Recent Legislative Changes:**
-- Criminal Procedure Amendment Bill 2025: Affects 12 active cases
-- Evidence Act Revision: New digital evidence standards
-- Court Fees Amendment: Updated fee structure effective next month
-
-**Impact Assessment:**
-- 5 cases may require procedural review
-- 3 judgments may need reconsideration under new evidence rules
-- Estimated timeline adjustments: 2-3 weeks for affected cases
-
-**Compliance Actions Needed:**
-1. Review cases filed before amendment date
-2. Update document templates with new requirements
-3. Schedule training for court staff on new procedures
-
-**AI Recommendation:**
-Schedule a system-wide case review meeting within 48 hours to address legislative impacts.`,
-                context: {
-                    relatedCases: context?.cases?.filter((c: any) =>
-                        c.type === 'criminal' || c.status === 'active'
-                    )?.slice(0, 5)?.map((c: any) => c.id) || []
-                }
-            };
-        }
-
-        if (lowerQuery.includes('judge') || lowerQuery.includes('workload')) {
-            const judges = context?.judges || [];
-            return {
-                content: `**Judge Workload Analysis:**
-
-**Current Allocation:**
-${judges.slice(0, 5).map((judge: any, i: number) => `
-- ${judge.name || `Judge ${i + 1}`}: ${Math.floor(Math.random() * 15) + 5} active cases
-  Status: ${Math.random() > 0.7 ? 'High workload' : 'Optimal workload'}
-`).join('')}
-
-**Workload Distribution:**
-- Average cases per judge: ${Math.floor((context?.activeCases || 0) / (judges.length || 1))}
-- Balanced allocation: ${judges.length > 0 ? 'Yes' : 'No judges available'}
-- Efficiency rating: 94%
-
-**Recommendations:**
-1. Consider redistributing cases from high-workload judges
-2. Schedule additional court sessions for backlog cases
-3. Implement automated case assignment for new cases`,
-                context: {
-                    relatedCases: context?.cases?.slice(0, 3)?.map((c: any) => c.id) || []
-                }
-            };
-        }
-
-        // Default intelligent response
-        return {
-            content: `I understand you're asking about: "${query}"
-
-Based on your system data, I can provide insights on:
-- **Case Management**: Analysis of your ${context?.totalCases || 0} total cases
-- **Document Processing**: Review of recent document workflows
-- **Court Scheduling**: Optimization of ${context?.pendingHearings || 0} pending hearings
-- **Legal Research**: Cross-reference with parliamentary updates
-- **Performance Analytics**: System efficiency and user metrics
-
-Could you be more specific about what aspect you'd like me to analyze? I have access to all your system data and can provide detailed insights on any area of the judiciary management system.`,
-            context: {}
-        };
     };
 
     const handleKeyPress = (e: React.KeyboardEvent) => {

@@ -8,14 +8,14 @@ import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import {
-  Calendar,
-  FileText,
-  Users,
-  Gavel,
-  AlertCircle,
-  CheckCircle,
-  Clock,
+import { 
+  Calendar, 
+  FileText, 
+  Users, 
+  Gavel, 
+  AlertCircle, 
+  CheckCircle, 
+  Clock, 
   Database,
   Bot,
   Globe,
@@ -27,6 +27,10 @@ import {
   RefreshCw
 } from 'lucide-react';
 import { getAll, getAllWhereEquals, getLimitedMany } from '@/lib/utils/firebase/general';
+
+// Import our new components
+import AIAssistant from '@/components/AIAssistant';// This would be the AI assistant component
+import { ParliamentDashboard, useParliamentUpdates } from '@/lib/parliamentIntegration';
 
 interface DashboardStats {
   totalCases: number;
@@ -60,6 +64,11 @@ export default function EnhancedAdminPage() {
   });
   const [alerts, setAlerts] = useState<SystemAlert[]>([]);
   const [loading, setLoading] = useState(true);
+  const [isAIAssistantOpen, setIsAIAssistantOpen] = useState(false);
+  const [aiQuery, setAIQuery] = useState<string>('');
+  
+  // Use parliament updates hook
+  const { updates: parliamentUpdates, loading: parliamentLoading } = useParliamentUpdates();
 
   useEffect(() => {
     const checkAuth = () => {
@@ -75,7 +84,7 @@ export default function EnhancedAdminPage() {
   const loadDashboardData = async () => {
     try {
       setLoading(true);
-
+      
       // Load real-time data from Firebase
       const [cases, users, hearings] = await Promise.all([
         getAll('cases').catch(() => []),
@@ -84,7 +93,7 @@ export default function EnhancedAdminPage() {
       ]);
 
       const activeCases = cases.filter((c: any) => c.status === 'active').length;
-      const pendingHearings = hearings.filter((h: any) =>
+      const pendingHearings = hearings.filter((h: any) => 
         new Date(h.date) > new Date()).length;
 
       setStats({
@@ -94,7 +103,7 @@ export default function EnhancedAdminPage() {
         totalUsers: users.length,
         documentsProcessed: 342, // This would come from documents collection
         aiQueriesHandled: 89, // This would come from AI logs
-        parliamentUpdates: 5, // This would come from parliament integration
+        parliamentUpdates: parliamentUpdates?.length || 0, // Real parliament data
         systemHealth: 95
       });
 
@@ -174,8 +183,8 @@ export default function EnhancedAdminPage() {
           {alerts.map((alert) => (
             <Alert key={alert.id} className={
               alert.type === 'error' ? 'border-red-500' :
-                alert.type === 'warning' ? 'border-yellow-500' :
-                  'border-blue-500'
+              alert.type === 'warning' ? 'border-yellow-500' :
+              'border-blue-500'
             }>
               <AlertCircle className="h-4 w-4" />
               <AlertDescription className="flex justify-between items-center">
@@ -263,11 +272,11 @@ export default function EnhancedAdminPage() {
           <CardContent>
             <div className="text-2xl font-bold mb-2">{stats.aiQueriesHandled}</div>
             <p className="text-sm text-muted-foreground mb-4">Queries handled today</p>
-            <Button
+            <Button 
               className="w-full bg-zambia-green hover:bg-zambia-green/90"
               onClick={() => {
-                // This would open the AI assistant interface
-                console.log('Opening AI Assistant...');
+                setIsAIAssistantOpen(true);
+                setAIQuery(''); // Clear any previous query
               }}
             >
               <Bot className="h-4 w-4 mr-2" />
@@ -327,7 +336,7 @@ export default function EnhancedAdminPage() {
 
         <TabsContent value="operations" className="space-y-4">
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            <Card
+            <Card 
               className="cursor-pointer hover:shadow-lg transition-shadow"
               onClick={() => router.push('/admin/cases')}
             >
@@ -342,7 +351,7 @@ export default function EnhancedAdminPage() {
               </CardHeader>
             </Card>
 
-            <Card
+            <Card 
               className="cursor-pointer hover:shadow-lg transition-shadow"
               onClick={() => router.push('/admin/calendar')}
             >
@@ -357,7 +366,7 @@ export default function EnhancedAdminPage() {
               </CardHeader>
             </Card>
 
-            <Card
+            <Card 
               className="cursor-pointer hover:shadow-lg transition-shadow"
               onClick={() => router.push('/admin/documents')}
             >
@@ -372,7 +381,7 @@ export default function EnhancedAdminPage() {
               </CardHeader>
             </Card>
 
-            <Card
+            <Card 
               className="cursor-pointer hover:shadow-lg transition-shadow"
               onClick={() => router.push('/admin/users')}
             >
@@ -387,7 +396,7 @@ export default function EnhancedAdminPage() {
               </CardHeader>
             </Card>
 
-            <Card
+            <Card 
               className="cursor-pointer hover:shadow-lg transition-shadow"
               onClick={() => router.push('/admin/workflows')}
             >
@@ -402,7 +411,7 @@ export default function EnhancedAdminPage() {
               </CardHeader>
             </Card>
 
-            <Card
+            <Card 
               className="cursor-pointer hover:shadow-lg transition-shadow"
               onClick={() => router.push('/admin/notifications')}
             >
@@ -500,63 +509,102 @@ export default function EnhancedAdminPage() {
         </TabsContent>
 
         <TabsContent value="integrations" className="space-y-4">
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          <div className="grid grid-cols-1 gap-6">
+            {/* Parliament Integration Section */}
             <Card>
               <CardHeader>
                 <CardTitle className="flex items-center space-x-2 text-zambia-orange">
                   <Globe className="h-5 w-5" />
-                  <span>Parliament API</span>
+                  <span>Parliament Integration</span>
                 </CardTitle>
                 <CardDescription>
-                  Real-time legislative updates and bill tracking
+                  Real-time legislative updates and impact analysis
                 </CardDescription>
               </CardHeader>
               <CardContent>
-                <div className="flex items-center space-x-2">
-                  <div className="h-2 w-2 bg-green-500 rounded-full"></div>
-                  <span className="text-sm text-green-600">Active</span>
-                </div>
+                <ParliamentDashboard />
               </CardContent>
             </Card>
 
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center space-x-2 text-zambia-orange">
-                  <Bot className="h-5 w-5" />
-                  <span>AI Services</span>
-                </CardTitle>
-                <CardDescription>
-                  Document analysis and legal research AI
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="flex items-center space-x-2">
-                  <div className="h-2 w-2 bg-green-500 rounded-full"></div>
-                  <span className="text-sm text-green-600">Operational</span>
-                </div>
-              </CardContent>
-            </Card>
+            {/* Other Integrations */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center space-x-2 text-zambia-orange">
+                    <Bot className="h-5 w-5" />
+                    <span>AI Services</span>
+                  </CardTitle>
+                  <CardDescription>
+                    Document analysis and legal research AI
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-3">
+                    <div className="flex items-center justify-between">
+                      <span className="text-sm">Service Status:</span>
+                      <div className="flex items-center space-x-2">
+                        <div className="h-2 w-2 bg-green-500 rounded-full"></div>
+                        <span className="text-sm text-green-600">Operational</span>
+                      </div>
+                    </div>
+                    <div className="flex items-center justify-between">
+                      <span className="text-sm">Queries Today:</span>
+                      <span className="text-sm font-medium">{stats.aiQueriesHandled}</span>
+                    </div>
+                    <Button 
+                      className="w-full" 
+                      variant="outline"
+                      onClick={() => {
+                        setAIQuery('Show me system performance metrics and insights');
+                        setIsAIAssistantOpen(true);
+                      }}
+                    >
+                      Launch AI Assistant
+                    </Button>
+                  </div>
+                </CardContent>
+              </Card>
 
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center space-x-2 text-zambia-orange">
-                  <Settings className="h-5 w-5" />
-                  <span>Government e-Services</span>
-                </CardTitle>
-                <CardDescription>
-                  Integration with national identity and civil services
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="flex items-center space-x-2">
-                  <div className="h-2 w-2 bg-yellow-500 rounded-full"></div>
-                  <span className="text-sm text-yellow-600">Pending</span>
-                </div>
-              </CardContent>
-            </Card>
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center space-x-2 text-zambia-orange">
+                    <Settings className="h-5 w-5" />
+                    <span>Government e-Services</span>
+                  </CardTitle>
+                  <CardDescription>
+                    Integration with national identity and civil services
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-3">
+                    <div className="flex items-center justify-between">
+                      <span className="text-sm">Connection:</span>
+                      <div className="flex items-center space-x-2">
+                        <div className="h-2 w-2 bg-yellow-500 rounded-full"></div>
+                        <span className="text-sm text-yellow-600">Pending Setup</span>
+                      </div>
+                    </div>
+                    <div className="text-sm text-gray-600">
+                      Integration with NRC, PACRA, and other government services
+                    </div>
+                    <Button className="w-full" variant="outline">
+                      Configure Integration
+                    </Button>
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
           </div>
         </TabsContent>
+
       </Tabs>
+
+      {/* AI Assistant Modal */}
+      <AIAssistant 
+        isOpen={isAIAssistantOpen}
+        onClose={() => setIsAIAssistantOpen(false)}
+        initialQuery={aiQuery}
+      />
     </div>
   );
 }

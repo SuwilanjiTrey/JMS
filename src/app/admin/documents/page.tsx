@@ -738,7 +738,7 @@ export default function AdminDocuments() {
                                         <SelectValue placeholder="Select a case" />
                                     </SelectTrigger>
                                     <SelectContent>
-                                        <SelectItem value="">No case selected</SelectItem>
+                                        <SelectItem value="None">No case selected</SelectItem>
                                         {cases.map((caseItem) => (
                                             <SelectItem key={caseItem.id} value={caseItem.id}>
                                                 {caseItem.caseNumber} - {caseItem.title}

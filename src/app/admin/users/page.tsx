@@ -737,7 +737,7 @@ export default function AdminUsers() {
             <Button
               onClick={handleSaveUser}
               disabled={!isFormValid}
-              className="bg-zambia-orange hover:bg-zambia-orange/90"
+              className="bg-green-600 hover:bg-green-700"
             >
               {selectedUser ? 'Save Changes' : 'Add User'}
             </Button>

@@ -10,6 +10,7 @@ import { Badge } from '@/components/ui/badge';
 import { Gavel, Eye, EyeOff } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { UserRole } from '@/models';
+import { demoCredentials } from '@/lib/constants/credentials';
 
 export default function LoginPage() {
   const [email, setEmail] = useState('');
@@ -73,13 +74,6 @@ export default function LoginPage() {
     }
   };
 
-  // Demo credentials
-  const demoCredentials = [
-    { role: 'admin', email: 'admin@courts.gov.zm', password: 'admin123' },
-    { role: 'judge', email: 'judge@courts.gov.zm', password: 'judge123' },
-    { role: 'lawyer', email: 'lawyer@courts.gov.zm', password: 'lawyer123' },
-    { role: 'public', email: 'public@courts.gov.zm', password: 'public123' },
-  ];
 
   const handleDemoLogin = (role: UserRole) => {
     const credential = demoCredentials.find(c => c.role === role);

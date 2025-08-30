@@ -228,7 +228,7 @@ export default function AdminUsers() {
           <p className="text-zambia-black/70">Manage users and their detailed profiles</p>
         </div>
         <Button
-          className="bg-zambia-orange hover:bg-zambia-orange/90"
+          className="bg-orange-600 hover:bg-orange-700"
           onClick={openAddModal}
         >
           <Plus className="w-4 h-4 mr-2" />

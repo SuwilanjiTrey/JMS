@@ -1,9 +1,9 @@
 // Demo credentials
-    import { users } from "./users";
+import { getUserByRole } from "./users";
 
-  export const demoCredentials = [
-    { role: 'admin', email: 'admin@courts.gov.zm', password: 'admin123' },
-    { role: 'judge', email: 'judge@courts.gov.zm', password: 'judge123' },
-    { role: 'lawyer', email: 'lawyer@courts.gov.zm', password: 'lawyer123' },
-    { role: 'public', email: 'public@courts.gov.zm', password: 'public123' },
-  ];
+export const demoCredentials = [
+    { role: 'admin', email: getUserByRole("admin")?.email, password: 'admin123' },
+    { role: 'judge', email: getUserByRole("judge")?.email, password: 'judge123' },
+    { role: 'lawyer', email: getUserByRole("lawyer")?.email, password: 'lawyer123' },
+    { role: 'public', email: getUserByRole("public")?.email, password: 'public123' },
+];

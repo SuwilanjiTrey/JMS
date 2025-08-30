@@ -30,8 +30,8 @@ export const users = [
     {
         id: '4',
         name: 'Sarah Tembo',
-        email: 'sarah.tembo@courts.gov.zm',
-        role: 'lawyer',
+        email: 'sarah.tembo@emailservice.com',
+        role: 'public',
         isActive: false,
         lastLogin: '2024-01-15',
         specialization: 'Family Law'

@@ -207,7 +207,7 @@ export default function LoginPage() {
         {/* Footer */}
         <div className="text-center text-sm text-gray-600">
           <p>Judicial Management System</p>
-          <p>© 2024 Republic of Zambia</p>
+          <p>© 2025 Republic of Zambia</p>
         </div>
       </div>
     </div>

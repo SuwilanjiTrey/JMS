@@ -16,7 +16,7 @@ import SystemAlerts from '@/components/exports/SystemAlerts';
 
 // Lawyer-specific components
 import LawyerHeader from '@/components/exports/LawyerHeader';
-import LawyerOverviewCards from '@/components/exports/LawyerOverviewCards';
+import LawyerOverviewCards from '@/components/exports/LawyerOVerviewCards';
 import LawyerAnalyticsCards from '@/components/exports/LawyerAnalyticsCards';
 import LawyerCasesTab from '@/components/exports/LawyerCasesTab';
 import LawyerDocumentsTab from '@/components/exports/LawyerDocumentsTab';

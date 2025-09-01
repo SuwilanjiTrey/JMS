@@ -8,7 +8,7 @@ import {
 import DashboardStats from '@/models/dashboard_stats';
 
 
-export const LawyerAnalyticsCards = ({
+const LawyerAnalyticsCards = ({
     stats,
     onAIAssistantOpen
 }: {
@@ -63,3 +63,4 @@ export const LawyerAnalyticsCards = ({
     );
 };
 
+export default LawyerAnalyticsCards;

@@ -6,7 +6,7 @@ import {
 import DashboardStats from '@/models/dashboard_stats';
 
 
-export const PublicOverviewCards = ({ stats }: { stats: DashboardStats }) => {
+const PublicOverviewCards = ({ stats }: { stats: DashboardStats }) => {
     return (
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-6">
             <Card>
@@ -41,3 +41,5 @@ export const PublicOverviewCards = ({ stats }: { stats: DashboardStats }) => {
         </div>
     );
 };
+
+export default PublicOverviewCards;

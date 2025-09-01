@@ -4,7 +4,7 @@ import {
     Eye,
 } from 'lucide-react';
 
-export const PublicCaseSearch = ({ router }: { router: any }) => {
+const PublicCaseSearch = ({ router }: { router: any }) => {
     return (
         <Card>
             <CardHeader>
@@ -52,3 +52,5 @@ export const PublicCaseSearch = ({ router }: { router: any }) => {
         </Card>
     );
 };
+
+export default PublicCaseSearch;

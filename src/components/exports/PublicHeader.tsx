@@ -5,7 +5,7 @@ import {
 } from 'lucide-react';
 
 
-export const PublicHeader = ({ onRefresh }: { onRefresh: () => void }) => {
+const PublicHeader = ({ onRefresh }: { onRefresh: () => void }) => {
     return (
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
             <div>
@@ -33,3 +33,5 @@ export const PublicHeader = ({ onRefresh }: { onRefresh: () => void }) => {
         </div>
     );
 };
+
+export default PublicHeader;

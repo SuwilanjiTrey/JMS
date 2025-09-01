@@ -1,110 +1,89 @@
 'use client';
 
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
+import { getAll } from '@/lib/utils/firebase/general';
 
-export default function PublicPage() {
+import LoadingComponent from '@/components/exports/LoadingComponent';
+import DashboardStats from '@/models/dashboard_stats';
+
+// Public-specific components
+import PublicHeader from '@/components/exports/PublicHeader';
+import PublicOverviewCards from '@/components/exports/PublicOverviewCards';
+import PublicCaseSearch from '@/components/exports/PublicCaseSearch';
+
+export default function PublicDashboard() {
   const router = useRouter();
+  const [stats, setStats] = useState<DashboardStats>({
+    totalCases: 0,
+    activeCases: 0,
+    pendingHearings: 0,
+    totalUsers: 0,
+    documentsProcessed: 0,
+    aiQueriesHandled: 0,
+    parliamentUpdates: 0,
+    systemHealth: 95
+  });
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    // This will be replaced with actual auth check
     const checkAuth = () => {
       const userRole = localStorage.getItem('userRole');
-      if (!userRole || userRole !== 'public') {
-        // For public access, we might allow unauthenticated access
-        // or require basic authentication
+      if (userRole !== 'public') {
+        router.push('/login');
       }
     };
     checkAuth();
+    loadDashboardData();
   }, [router]);
 
+  const loadDashboardData = async () => {
+    try {
+      setLoading(true);
+
+      // Load public-accessible data from Firebase
+      const cases = await getAll('cases').catch(() => []);
+
+      // Only show public cases (non-confidential)
+      const publicCases = cases.filter((c: any) => !c.isConfidential);
+      const activeCases = publicCases.filter((c: any) => c.status === 'active').length;
+
+      setStats({
+        totalCases: publicCases.length,
+        activeCases,
+        pendingHearings: 0, // Not shown to public
+        totalUsers: 0, // Not relevant for public
+        documentsProcessed: 0, // Not relevant for public
+        aiQueriesHandled: 0, // Not relevant for public
+        parliamentUpdates: 0, // Not relevant for public
+        systemHealth: 95
+      });
+
+    } catch (error) {
+      console.error('Error loading dashboard data:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const refreshData = () => {
+    loadDashboardData();
+  };
+
+  if (loading) {
+    return <LoadingComponent />;
+  }
+
   return (
-    <div className="container mx-auto p-6 space-y-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-3xl font-bold text-zambia-black">Public Portal</h1>
-          <p className="text-zambia-black/70">Access public case information</p>
-        </div>
-        <Badge variant="outline" className="bg-gray-100 text-gray-800">
-          Public
-        </Badge>
-      </div>
+    <div className="container mx-auto p-3 sm:p-6 space-y-4 sm:space-y-6">
+      {/* Header */}
+      <PublicHeader onRefresh={refreshData} />
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-zambia-green">Search Cases</CardTitle>
-            <CardDescription>Search public case records</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">2,456</div>
-          </CardContent>
-        </Card>
+      {/* Public Overview Cards */}
+      <PublicOverviewCards stats={stats} />
 
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-zambia-green">Active Cases</CardTitle>
-            <CardDescription>Currently active cases</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">1,234</div>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-zambia-green">Court Schedules</CardTitle>
-            <CardDescription>Public court schedules</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">45</div>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-zambia-green">Recent Rulings</CardTitle>
-            <CardDescription>Recent court rulings</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">89</div>
-          </CardContent>
-        </Card>
-      </div>
-
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        <Card 
-          className="cursor-pointer hover:shadow-lg transition-shadow"
-          onClick={() => router.push('/public/cases')}
-        >
-          <CardHeader>
-            <CardTitle className="text-zambia-orange">Case Search</CardTitle>
-            <CardDescription>Search for case information</CardDescription>
-          </CardHeader>
-        </Card>
-
-        <Card 
-          className="cursor-pointer hover:shadow-lg transition-shadow"
-          onClick={() => router.push('/public/search')}
-        >
-          <CardHeader>
-            <CardTitle className="text-zambia-orange">Advanced Search</CardTitle>
-            <CardDescription>Advanced case search options</CardDescription>
-          </CardHeader>
-        </Card>
-
-        <Card 
-          className="cursor-pointer hover:shadow-lg transition-shadow"
-          onClick={() => router.push('/public/dashboard')}
-        >
-          <CardHeader>
-            <CardTitle className="text-zambia-orange">Dashboard</CardTitle>
-            <CardDescription>View public dashboard</CardDescription>
-          </CardHeader>
-        </Card>
-      </div>
+      {/* Public Case Search */}
+      <PublicCaseSearch router={router} />
     </div>
   );
 }

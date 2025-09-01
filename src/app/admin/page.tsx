@@ -2,29 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
-import { Progress } from '@/components/ui/progress';
-import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import {
-  Calendar,
-  FileText,
-  Users,
-  Gavel,
-  AlertCircle,
-  CheckCircle,
-  Clock,
-  Database,
-  Bot,
-  Globe,
-  Shield,
-  BarChart3,
-  Workflow,
-  Bell,
-  RefreshCw
-} from 'lucide-react';
 import { getAll } from '@/lib/utils/firebase/general';
 
 // Import our new components

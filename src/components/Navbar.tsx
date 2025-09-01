@@ -37,20 +37,21 @@ export default function Navbar({ userRole, userName, userAvatar }: NavbarProps) 
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const router = useRouter();
 
-  const getRoleBadgeColor = (role: UserRole) => {
-    switch (role) {
-      case 'admin':
-        return 'bg-zambia-orange text-white';
-      case 'judge':
-        return 'bg-zambia-green text-white';
-      case 'lawyer':
-        return 'bg-blue-100 text-blue-800';
-      case 'public':
-        return 'bg-gray-100 text-gray-800';
-      default:
-        return 'bg-gray-100 text-gray-800';
-    }
-  };
+const getRoleBadgeColor = (role: UserRole) => {
+  switch (role) {
+    case 'admin':
+      return 'bg-orange-500 text-white'; // Zambia orange → orange-500
+    case 'judge':
+      return 'bg-green-600 text-white'; // Zambia green → green-600
+    case 'lawyer':
+      return 'bg-blue-100 text-blue-800';
+    case 'public':
+      return 'bg-gray-100 text-gray-800';
+    default:
+      return 'bg-gray-100 text-gray-800';
+  }
+};
+
 
   const getDashboardPath = (role: UserRole) => {
     switch (role) {
@@ -81,8 +82,10 @@ export default function Navbar({ userRole, userName, userAvatar }: NavbarProps) 
           {/* Logo and Brand */}
           <div className="flex items-center">
             <Link href={userRole ? getDashboardPath(userRole) : '/'} className="flex items-center">
-              <Gavel className="h-8 w-8 text-zambia-orange mr-2" />
-              <span className="text-xl font-bold text-zambia-black">JMS Zambia</span>
+              
+              <Gavel className="h-8 w-8 text-orange-500 mr-2" />
+<span className="text-xl font-bold text-gray-900">JMS Zambia</span>
+
             </Link>
           </div>
 
@@ -91,7 +94,7 @@ export default function Navbar({ userRole, userName, userAvatar }: NavbarProps) 
             <div className="hidden md:flex items-center space-x-4">
               <Link 
                 href={getDashboardPath(userRole)}
-                className="text-gray-700 hover:text-zambia-orange px-3 py-2 rounded-md text-sm font-medium"
+                className="text-gray-700 hover:text-orange-600 px-3 py-2 rounded-md text-sm font-medium"
               >
                 Dashboard
               </Link>
@@ -99,7 +102,7 @@ export default function Navbar({ userRole, userName, userAvatar }: NavbarProps) 
               {userRole !== 'public' && (
                 <Link 
                   href={`${getDashboardPath(userRole)}/cases`}
-                  className="text-gray-700 hover:text-zambia-orange px-3 py-2 rounded-md text-sm font-medium"
+                  className="text-gray-700 hover:text-orange-600 px-3 py-2 rounded-md text-sm font-medium"
                 >
                   Cases
                 </Link>
@@ -108,7 +111,7 @@ export default function Navbar({ userRole, userName, userAvatar }: NavbarProps) 
               {(userRole === 'admin' || userRole === 'judge') && (
                 <Link 
                   href={`${getDashboardPath(userRole)}/calendar`}
-                  className="text-gray-700 hover:text-zambia-orange px-3 py-2 rounded-md text-sm font-medium"
+                  className="text-gray-700 hover:text-orange-600 px-3 py-2 rounded-md text-sm font-medium"
                 >
                   Calendar
                 </Link>
@@ -117,7 +120,7 @@ export default function Navbar({ userRole, userName, userAvatar }: NavbarProps) 
               {userRole === 'admin' && (
                 <Link 
                   href="/admin/users"
-                  className="text-gray-700 hover:text-zambia-orange px-3 py-2 rounded-md text-sm font-medium"
+                  className="text-gray-700 hover:text-orange-600 px-3 py-2 rounded-md text-sm font-medium"
                 >
                   Users
                 </Link>
@@ -126,7 +129,7 @@ export default function Navbar({ userRole, userName, userAvatar }: NavbarProps) 
               {userRole === 'lawyer' && (
                 <Link 
                   href="/lawyers/documents"
-                  className="text-gray-700 hover:text-zambia-orange px-3 py-2 rounded-md text-sm font-medium"
+                  className="text-gray-700 hover:text-orange-600 px-3 py-2 rounded-md text-sm font-medium"
                 >
                   Documents
                 </Link>
@@ -135,7 +138,7 @@ export default function Navbar({ userRole, userName, userAvatar }: NavbarProps) 
               {userRole === 'public' && (
                 <Link 
                   href="/public/search"
-                  className="text-gray-700 hover:text-zambia-orange px-3 py-2 rounded-md text-sm font-medium"
+                  className="text-gray-700 hover:text-orange-600 px-3 py-2 rounded-md text-sm font-medium"
                 >
                   Search
                 </Link>
@@ -215,7 +218,7 @@ export default function Navbar({ userRole, userName, userAvatar }: NavbarProps) 
           <div className="px-2 pt-2 pb-3 space-y-1 sm:px-3 bg-white border-t">
             <Link
               href={getDashboardPath(userRole)}
-              className="text-gray-700 hover:text-zambia-orange block px-3 py-2 rounded-md text-base font-medium"
+              className="text-gray-700 hover:text-orange-600 block px-3 py-2 rounded-md text-base font-medium"
             >
               Dashboard
             </Link>
@@ -223,7 +226,7 @@ export default function Navbar({ userRole, userName, userAvatar }: NavbarProps) 
             {userRole !== 'public' && (
               <Link
                 href={`${getDashboardPath(userRole)}/cases`}
-                className="text-gray-700 hover:text-zambia-orange block px-3 py-2 rounded-md text-base font-medium"
+                className="text-gray-700 hover:text-orange-600 block px-3 py-2 rounded-md text-base font-medium"
               >
                 Cases
               </Link>
@@ -232,7 +235,7 @@ export default function Navbar({ userRole, userName, userAvatar }: NavbarProps) 
             {(userRole === 'admin' || userRole === 'judge') && (
               <Link
                 href={`${getDashboardPath(userRole)}/calendar`}
-                className="text-gray-700 hover:text-zambia-orange block px-3 py-2 rounded-md text-base font-medium"
+                className="text-gray-700 hover:text-orange-600 block px-3 py-2 rounded-md text-base font-medium"
               >
                 Calendar
               </Link>
@@ -241,7 +244,7 @@ export default function Navbar({ userRole, userName, userAvatar }: NavbarProps) 
             {userRole === 'admin' && (
               <Link
                 href="/admin/users"
-                className="text-gray-700 hover:text-zambia-orange block px-3 py-2 rounded-md text-base font-medium"
+                className="text-gray-700 hover:text-orange-600 block px-3 py-2 rounded-md text-base font-medium"
               >
                 Users
               </Link>
@@ -250,7 +253,7 @@ export default function Navbar({ userRole, userName, userAvatar }: NavbarProps) 
             {userRole === 'lawyer' && (
               <Link
                 href="/lawyers/documents"
-                className="text-gray-700 hover:text-zambia-orange block px-3 py-2 rounded-md text-base font-medium"
+                className="text-gray-700 hover:text-orange-600 block px-3 py-2 rounded-md text-base font-medium"
               >
                 Documents
               </Link>
@@ -259,7 +262,7 @@ export default function Navbar({ userRole, userName, userAvatar }: NavbarProps) 
             {userRole === 'public' && (
               <Link
                 href="/public/search"
-                className="text-gray-700 hover:text-zambia-orange block px-3 py-2 rounded-md text-base font-medium"
+                className="text-gray-700 hover:text-orange-600 block px-3 py-2 rounded-md text-base font-medium"
               >
                 Search
               </Link>

@@ -1,7 +1,11 @@
 import type { NextConfig } from "next";
 
+const isProd = process.env.NODE_ENV === "production";
+
 const nextConfig: NextConfig = {
-  output: "export",  // necessary for static export
+  output: "export",
+  basePath: isProd ? "/JMS" : "",
+  assetPrefix: isProd ? "/JMS/" : "",   // 👈 repo name
   typescript: {
     ignoreBuildErrors: true,
   },

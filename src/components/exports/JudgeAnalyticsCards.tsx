@@ -28,7 +28,7 @@ const JudgeAnalyticsCards = ({
                     <div className="text-xl sm:text-2xl font-bold mb-2">{stats.aiQueriesHandled}</div>
                     <p className="text-xs sm:text-sm text-muted-foreground mb-4">Research queries today</p>
                     <Button
-                        className="w-full bg-zambia-green hover:bg-zambia-green/90 text-xs sm:text-sm"
+                        className="w-full bg-green-500 hover:bg-green-600 text-xs sm:text-sm"
                         onClick={() => onAIAssistantOpen('Help me research legal precedents for my current cases')}
                     >
                         <Bot className="h-3 w-3 sm:h-4 sm:w-4 mr-2" />

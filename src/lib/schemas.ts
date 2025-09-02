@@ -1,3 +1,4 @@
+// src/lib/schemas.ts
 import { z } from 'zod';
 
 export const CaseCreateSchema = z.object({
@@ -36,9 +37,21 @@ export const CaseCreateSchema = z.object({
     typePrefix: z.string().optional(),
 });
 
+export const CaseUpdateSchema = z.object({
+    title: z.string().optional(),
+    description: z.string().optional(),
+    status: z.enum(['draft', 'active', 'pending', 'closed', 'appealed', 'dismissed']).optional(),
+    priority: z.enum(['low', 'medium', 'high', 'urgent']).optional(),
+    assignedTo: z.string().optional(),
+    estimatedDuration: z.number().optional(),
+    actualDuration: z.number().optional(),
+    nextHearingDate: z.string().optional(),
+    tags: z.array(z.string()).optional(),
+});
+
 export const HearingCreateSchema = z.object({
     caseId: z.string(),
-    date: z.string().datetime(),
+    date: z.string(),       // ISO datetime string
     startTime: z.string(),
     endTime: z.string(),
     location: z.string(),
@@ -46,9 +59,8 @@ export const HearingCreateSchema = z.object({
     purpose: z.string(),
 });
 
-
 export const HearingUpdateSchema = z.object({
-    date: z.string().datetime().optional(),
+    date: z.string().optional(),
     startTime: z.string().optional(),
     endTime: z.string().optional(),
     location: z.string().optional(),
@@ -57,7 +69,6 @@ export const HearingUpdateSchema = z.object({
     notes: z.string().optional(),
     outcome: z.string().optional(),
 });
-
 
 export const DocumentCreateSchema = z.object({
     title: z.string(),
@@ -72,23 +83,20 @@ export const DocumentCreateSchema = z.object({
     isPublic: z.boolean().default(false),
     accessLevel: z.enum(['public', 'restricted', 'confidential']).default('restricted'),
     tags: z.array(z.string()).optional(),
-    parentDocumentId: z.string().optional(), // versioning
+    parentDocumentId: z.string().optional(), // for versioning
 });
-
 
 export const DocumentSignSchema = z.object({
-    signedBy: z.string(), // judge/staff id
+    signedBy: z.string(),
     signatureHash: z.string(),
 });
-
 
 export const DocumentSealSchema = z.object({
     sealedBy: z.string(),
     sealType: z.enum(['court', 'judicial', 'administrative']),
 });
 
-
 export const ReportQuerySchema = z.object({
-    from: z.string().date().optional(),
-    to: z.string().date().optional(),
+    from: z.string().optional(), // YYYY-MM-DD
+    to: z.string().optional(),
 });

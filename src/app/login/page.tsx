@@ -1,5 +1,4 @@
 'use client';
-
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -11,6 +10,7 @@ import { Gavel, Eye, EyeOff } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { UserRole } from '@/models';
 import { demoCredentials } from '@/lib/constants/credentials';
+
 
 export default function LoginPage() {
   const [email, setEmail] = useState('');
@@ -24,7 +24,6 @@ export default function LoginPage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
-
     try {
       // For demo purposes, we'll use mock authentication
       // In a real app, this would call the actual Firebase auth
@@ -74,7 +73,6 @@ export default function LoginPage() {
     }
   };
 
-
   const handleDemoLogin = (role: UserRole) => {
     const credential = demoCredentials.find(c => c.role === role);
     if (credential) {
@@ -82,6 +80,10 @@ export default function LoginPage() {
       setPassword(credential.password);
       setSelectedRole(role);
     }
+  };
+
+  const handleSignUpClick = () => {
+    router.push('/registration');
   };
 
   return (
@@ -95,7 +97,7 @@ export default function LoginPage() {
           <h1 className="text-3xl font-bold text-orange-600 hover:text-orange-500">Judicial Management System</h1>
           <p className="text-green-600 hover:text-green-500 mt-2">Republic of Zambia</p>
         </div>
-
+        
         {/* Login Form */}
         <Card>
           <CardHeader>
@@ -117,7 +119,6 @@ export default function LoginPage() {
                   required
                 />
               </div>
-
               <div>
                 <Label htmlFor="password">Password</Label>
                 <div className="relative">
@@ -144,7 +145,6 @@ export default function LoginPage() {
                   </Button>
                 </div>
               </div>
-
               <div>
                 <Label htmlFor="role">Role</Label>
                 <div className="grid grid-cols-2 gap-2 mt-2">
@@ -163,7 +163,6 @@ export default function LoginPage() {
                   ))}
                 </div>
               </div>
-
               <Button
                 type="submit"
                 className="w-full bg-orange-600 hover:bg-green-700 hover:bg-green-800 text-white w-full bg-red-600 hover:bg-red-700 text-white"
@@ -171,10 +170,24 @@ export default function LoginPage() {
               >
                 {isLoading ? 'Signing in...' : 'Sign In'}
               </Button>
+              
+              {/* Sign Up Link */}
+              <div className="mt-4 text-center">
+                <p className="text-sm text-gray-600">
+                  Don't have an account?{' '}
+                  <button
+                    type="button"
+                    className="text-orange-600 hover:text-orange-500 font-medium"
+                    onClick={handleSignUpClick}
+                  >
+                    Sign Up
+                  </button>
+                </p>
+              </div>
             </form>
           </CardContent>
         </Card>
-
+        
         {/* Demo Credentials */}
         <Card>
           <CardHeader>
@@ -203,7 +216,7 @@ export default function LoginPage() {
             </div>
           </CardContent>
         </Card>
-
+        
         {/* Footer */}
         <div className="text-center text-sm text-gray-600">
           <p>Judicial Management System</p>

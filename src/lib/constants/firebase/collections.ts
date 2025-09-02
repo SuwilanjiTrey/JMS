@@ -6,4 +6,9 @@ export const COLLECTIONS = {
   DOCUMENTS: 'documents',
   RULINGS: 'rulings',
   ROLES: 'roles',
+  COURTS: 'courts',
+  LAW_FIRMS: 'lawFirms',
+  CALENDAR_EVENTS: 'calendarEvents',
+  NOTIFICATIONS: 'notifications'
 } as const;
+

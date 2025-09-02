@@ -22,7 +22,8 @@ import {
   getDocs, 
   collection 
 } from 'firebase/firestore';
-import { User, UserCreationData, UserUpdateData, UserRole } from '@/models';
+import { User, UserCreationData, UserUpdateData, UserRole, CourtType } from '@/models';
+
 
 // Convert Firebase user to app user
 export const firebaseUserToAppUser = async (firebaseUser: FirebaseUser): Promise<User | null> => {
@@ -53,8 +54,8 @@ export const firebaseUserToAppUser = async (firebaseUser: FirebaseUser): Promise
   }
 };
 
-// Register new user
-export const registerUser = async (userData: UserCreationData): Promise<User> => {
+// Update the registerUser function to handle the new profile structure
+export const registerUserWithProfile = async (userData: UserCreationData): Promise<User> => {
   try {
     // Create Firebase auth user
     const userCredential = await createUserWithEmailAndPassword(
@@ -70,7 +71,7 @@ export const registerUser = async (userData: UserCreationData): Promise<User> =>
       displayName: userData.displayName
     });
     
-    // Create user document in Firestore
+    // Create user document in Firestore with enhanced profile
     const newUser: Omit<User, 'id'> = {
       email: userData.email,
       displayName: userData.displayName,
@@ -78,11 +79,7 @@ export const registerUser = async (userData: UserCreationData): Promise<User> =>
       createdAt: new Date(),
       updatedAt: new Date(),
       isActive: true,
-      profile: userData.profile ? {
-        ...userData.profile,
-        firstName: userData.profile.firstName,
-        lastName: userData.profile.lastName
-      } : undefined
+      profile: userData.profile
     };
     
     await setDoc(doc(db, COLLECTIONS.USERS, firebaseUser.uid), {
@@ -90,6 +87,16 @@ export const registerUser = async (userData: UserCreationData): Promise<User> =>
       createdAt: new Date(),
       updatedAt: new Date()
     });
+
+    // If it's a court admin or judge, also create/update court record
+    if (userData.role === 'judge' || (userData.role === 'admin' && userData.profile?.adminType !== 'super-admin')) {
+      await createOrUpdateCourtRecord(firebaseUser.uid, userData);
+    }
+
+    // If it's a lawyer, create/update law firm record
+    if (userData.role === 'lawyer' && userData.profile?.lawFirmName) {
+      await createOrUpdateLawFirmRecord(firebaseUser.uid, userData);
+    }
     
     return {
       id: firebaseUser.uid,
@@ -98,6 +105,83 @@ export const registerUser = async (userData: UserCreationData): Promise<User> =>
   } catch (error) {
     console.error('Error registering user:', error);
     throw error;
+  }
+};
+
+// Helper function to create or update court records
+const createOrUpdateCourtRecord = async (userId: string, userData: UserCreationData) => {
+  if (!userData.profile?.courtType) return;
+
+  const courtId = `${userData.profile.courtType}-${userData.profile.courtLocation?.toLowerCase().replace(/\s+/g, '-')}`;
+  const courtRef = doc(db, COLLECTIONS.COURTS, courtId);
+  
+  try {
+    const courtDoc = await getDoc(courtRef);
+    
+    if (!courtDoc.exists()) {
+      // Create new court record
+      await setDoc(courtRef, {
+        id: courtId,
+        type: userData.profile.courtType,
+        location: userData.profile.courtLocation,
+        name: `${courtTypes.find(c => c.value === userData.profile?.courtType)?.label} - ${userData.profile.courtLocation}`,
+        judges: userData.role === 'judge' ? [userId] : [],
+        administrators: userData.role === 'admin' ? [userId] : [],
+        createdAt: new Date(),
+        updatedAt: new Date(),
+        isActive: true
+      });
+    } else {
+      // Update existing court record
+      const currentData = courtDoc.data();
+      const updateData: any = {
+        updatedAt: new Date()
+      };
+
+      if (userData.role === 'judge') {
+        updateData.judges = [...(currentData.judges || []), userId];
+      } else if (userData.role === 'admin') {
+        updateData.administrators = [...(currentData.administrators || []), userId];
+      }
+
+      await updateDoc(courtRef, updateData);
+    }
+  } catch (error) {
+    console.error('Error creating/updating court record:', error);
+  }
+};
+
+// Helper function to create or update law firm records
+const createOrUpdateLawFirmRecord = async (userId: string, userData: UserCreationData) => {
+  if (!userData.profile?.lawFirmName) return;
+
+  const lawFirmId = userData.profile.lawFirmName.toLowerCase().replace(/\s+/g, '-');
+  const lawFirmRef = doc(db, COLLECTIONS.LAW_FIRMS, lawFirmId);
+  
+  try {
+    const lawFirmDoc = await getDoc(lawFirmRef);
+    
+    if (!lawFirmDoc.exists()) {
+      // Create new law firm record
+      await setDoc(lawFirmRef, {
+        id: lawFirmId,
+        name: userData.profile.lawFirmName,
+        lawyers: [userId],
+        administrators: [],
+        createdAt: new Date(),
+        updatedAt: new Date(),
+        isActive: true
+      });
+    } else {
+      // Update existing law firm record
+      const currentData = lawFirmDoc.data();
+      await updateDoc(lawFirmRef, {
+        lawyers: [...(currentData.lawyers || []), userId],
+        updatedAt: new Date()
+      });
+    }
+  } catch (error) {
+    console.error('Error creating/updating law firm record:', error);
   }
 };
 

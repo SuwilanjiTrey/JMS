@@ -1,9 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { db } from '@/src/lib/constants/firebase/config';
+import { db } from '@/lib/constants/firebase/config';
 import { collection, doc, getDoc, updateDoc } from 'firebase/firestore';
-import { COLLECTIONS } from '@/src/lib/constants/collections';
-import { HearingUpdateSchema } from '@/src/lib/schemas';
-import { writeAudit } from '@/src/lib/audit';
+import { COLLECTIONS } from '@/lib/constants/firebase/collections';
+import { HearingUpdateSchema } from '@/lib/schemas';
+import { writeAudit } from '@/lib/audit';
 
 export async function PATCH(req: NextRequest, { params }: { params: { id: string } }) {
     try {

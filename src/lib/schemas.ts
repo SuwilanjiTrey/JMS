@@ -1,5 +1,40 @@
 import { z } from 'zod';
 
+export const CaseCreateSchema = z.object({
+    title: z.string().min(3),
+    description: z.string().min(3),
+    type: z.enum(['civil', 'criminal', 'family', 'commercial', 'constitutional', 'other']),
+    priority: z.enum(['low', 'medium', 'high', 'urgent']).default('medium'),
+    plaintiffs: z.array(z.object({
+        name: z.string(),
+        type: z.enum(['individual', 'organization']),
+        contactInfo: z.object({
+            email: z.string().email().optional(),
+            phone: z.string().optional(),
+            address: z.string().optional()
+        }).optional(),
+        representative: z.string().optional(),
+    })),
+    defendants: z.array(z.object({
+        name: z.string(),
+        type: z.enum(['individual', 'organization']),
+        contactInfo: z.object({
+            email: z.string().email().optional(),
+            phone: z.string().optional(),
+            address: z.string().optional()
+        }).optional(),
+        representative: z.string().optional(),
+    })),
+    lawyers: z.array(z.object({
+        userId: z.string(),
+        role: z.enum(['plaintiff', 'defendant'])
+    })).optional(),
+    estimatedDuration: z.number().int().positive().optional(),
+    tags: z.array(z.string()).optional(),
+    // optional overrides for numbering/court code:
+    courtCode: z.string().optional(),
+    typePrefix: z.string().optional(),
+});
 
 export const HearingCreateSchema = z.object({
     caseId: z.string(),

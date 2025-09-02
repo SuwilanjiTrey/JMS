@@ -268,6 +268,30 @@ npm start
 * fetch('/api/reports/performance')
 * fetch('/api/reports/trends')
 
+#### For future configuration:
+
+* ##### Authentication Endpoints
+- `POST /api/auth/login` - User login
+- `POST /api/auth/register` - User registration
+- `POST /api/auth/logout` - User logout
+- `POST /api/auth/reset-password` - Password reset
+
+* ###### Case Management Endpoints
+- `GET /api/cases` - List cases (with filtering)
+- `POST /api/cases` - Create new case
+- `GET /api/cases/[id]` - Get case details
+- `PUT /api/cases/[id]` - Update case
+- `DELETE /api/cases/[id]` - Delete case
+
+* ##### Document Management Endpoints
+- `POST /api/documents/upload` - Upload document
+- `GET /api/documents/[id]` - Download document
+- `DELETE /api/documents/[id]` - Delete document
+
+* ##### AI Service Endpoints
+- `POST /api/ai/summarize` - Summarize document
+- `POST /api/ai/query` - Answer legal query
+- `POST /api/ai/analyze` - Analyze case
 
 ## 🔧 Configuration
 

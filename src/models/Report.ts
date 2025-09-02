@@ -3,7 +3,6 @@ export interface CaseloadReportItem {
     total: number;
 }
 
-
 export interface PerformanceMetric {
     judgeId: string;
     judgeName?: string;
@@ -11,7 +10,6 @@ export interface PerformanceMetric {
     casesClosed: number;
     avgResolutionDays?: number;
 }
-
 
 export interface TrendPoint {
     date: string; // YYYY-MM-DD

@@ -1,8 +1,7 @@
-import { db } from './constants/firebase/config';
 import { collection, doc, setDoc } from 'firebase/firestore';
+import { db } from './constants/firebase/config';
 import { COLLECTIONS } from './constants/firebase/collections';
-import type { Notification } from '@/models/Notification';
-
+import type { Notification } from '../models/Notification';
 
 export async function sendNotification(n: Omit<Notification, 'id' | 'createdAt'>) {
     const id = crypto.randomUUID();

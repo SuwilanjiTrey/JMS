@@ -1,8 +1,7 @@
+import { collection, doc, setDoc } from 'firebase/firestore';
 import { db } from './constants/firebase/config';
-import { collection, doc, setDoc, serverTimestamp } from 'firebase/firestore';
 import { COLLECTIONS } from './constants/firebase/collections';
-import type { AuditLog, AuditAction } from '../models/Audit';
-
+import type { AuditLog } from '../models/Audit';
 
 export async function writeAudit(log: Omit<AuditLog, 'id' | 'timestamp'>) {
     const id = crypto.randomUUID();

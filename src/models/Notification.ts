@@ -1,4 +1,5 @@
 export type RecipientType = 'judge' | 'lawyer' | 'party' | 'staff';
+
 export interface Notification {
     id: string;
     recipientUserId: string;

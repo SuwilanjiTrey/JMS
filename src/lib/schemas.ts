@@ -1,4 +1,3 @@
-// src/lib/schemas.ts
 import { z } from 'zod';
 
 export const CaseCreateSchema = z.object({
@@ -32,7 +31,6 @@ export const CaseCreateSchema = z.object({
     })).optional(),
     estimatedDuration: z.number().int().positive().optional(),
     tags: z.array(z.string()).optional(),
-    // optional overrides for numbering/court code:
     courtCode: z.string().optional(),
     typePrefix: z.string().optional(),
 });
@@ -45,13 +43,13 @@ export const CaseUpdateSchema = z.object({
     assignedTo: z.string().optional(),
     estimatedDuration: z.number().optional(),
     actualDuration: z.number().optional(),
-    nextHearingDate: z.string().optional(),
+    nextHearingDate: z.string().datetime().optional(),
     tags: z.array(z.string()).optional(),
 });
 
 export const HearingCreateSchema = z.object({
     caseId: z.string(),
-    date: z.string(),       // ISO datetime string
+    date: z.string().datetime(),
     startTime: z.string(),
     endTime: z.string(),
     location: z.string(),
@@ -60,7 +58,7 @@ export const HearingCreateSchema = z.object({
 });
 
 export const HearingUpdateSchema = z.object({
-    date: z.string().optional(),
+    date: z.string().datetime().optional(),
     startTime: z.string().optional(),
     endTime: z.string().optional(),
     location: z.string().optional(),
@@ -83,7 +81,7 @@ export const DocumentCreateSchema = z.object({
     isPublic: z.boolean().default(false),
     accessLevel: z.enum(['public', 'restricted', 'confidential']).default('restricted'),
     tags: z.array(z.string()).optional(),
-    parentDocumentId: z.string().optional(), // for versioning
+    parentDocumentId: z.string().optional(),
 });
 
 export const DocumentSignSchema = z.object({
@@ -97,6 +95,6 @@ export const DocumentSealSchema = z.object({
 });
 
 export const ReportQuerySchema = z.object({
-    from: z.string().optional(), // YYYY-MM-DD
-    to: z.string().optional(),
+    from: z.string().date().optional(),
+    to: z.string().date().optional(),
 });

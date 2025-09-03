@@ -1,0 +1,100 @@
+import { z } from 'zod';
+
+export const CaseCreateSchema = z.object({
+    title: z.string().min(3),
+    description: z.string().min(3),
+    type: z.enum(['civil', 'criminal', 'family', 'commercial', 'constitutional', 'other']),
+    priority: z.enum(['low', 'medium', 'high', 'urgent']).default('medium'),
+    plaintiffs: z.array(z.object({
+        name: z.string(),
+        type: z.enum(['individual', 'organization']),
+        contactInfo: z.object({
+            email: z.string().email().optional(),
+            phone: z.string().optional(),
+            address: z.string().optional()
+        }).optional(),
+        representative: z.string().optional(),
+    })),
+    defendants: z.array(z.object({
+        name: z.string(),
+        type: z.enum(['individual', 'organization']),
+        contactInfo: z.object({
+            email: z.string().email().optional(),
+            phone: z.string().optional(),
+            address: z.string().optional()
+        }).optional(),
+        representative: z.string().optional(),
+    })),
+    lawyers: z.array(z.object({
+        userId: z.string(),
+        role: z.enum(['plaintiff', 'defendant'])
+    })).optional(),
+    estimatedDuration: z.number().int().positive().optional(),
+    tags: z.array(z.string()).optional(),
+    courtCode: z.string().optional(),
+    typePrefix: z.string().optional(),
+});
+
+export const CaseUpdateSchema = z.object({
+    title: z.string().optional(),
+    description: z.string().optional(),
+    status: z.enum(['draft', 'active', 'pending', 'closed', 'appealed', 'dismissed']).optional(),
+    priority: z.enum(['low', 'medium', 'high', 'urgent']).optional(),
+    assignedTo: z.string().optional(),
+    estimatedDuration: z.number().optional(),
+    actualDuration: z.number().optional(),
+    nextHearingDate: z.string().datetime().optional(),
+    tags: z.array(z.string()).optional(),
+});
+
+export const HearingCreateSchema = z.object({
+    caseId: z.string(),
+    date: z.string().datetime(),
+    startTime: z.string(),
+    endTime: z.string(),
+    location: z.string(),
+    judgeId: z.string(),
+    purpose: z.string(),
+});
+
+export const HearingUpdateSchema = z.object({
+    date: z.string().datetime().optional(),
+    startTime: z.string().optional(),
+    endTime: z.string().optional(),
+    location: z.string().optional(),
+    purpose: z.string().optional(),
+    status: z.enum(['scheduled', 'in-progress', 'completed', 'cancelled', 'postponed']).optional(),
+    notes: z.string().optional(),
+    outcome: z.string().optional(),
+});
+
+export const DocumentCreateSchema = z.object({
+    title: z.string(),
+    description: z.string().optional(),
+    type: z.enum(['motion', 'brief', 'evidence', 'order', 'judgment', 'pleading', 'exhibit', 'other']),
+    caseId: z.string().optional(),
+    caseNumber: z.string().optional(),
+    fileName: z.string(),
+    fileSize: z.number(),
+    mimeType: z.string(),
+    category: z.enum(['pleading', 'evidence', 'motion', 'order', 'correspondence', 'other']).default('other'),
+    isPublic: z.boolean().default(false),
+    accessLevel: z.enum(['public', 'restricted', 'confidential']).default('restricted'),
+    tags: z.array(z.string()).optional(),
+    parentDocumentId: z.string().optional(),
+});
+
+export const DocumentSignSchema = z.object({
+    signedBy: z.string(),
+    signatureHash: z.string(),
+});
+
+export const DocumentSealSchema = z.object({
+    sealedBy: z.string(),
+    sealType: z.enum(['court', 'judicial', 'administrative']),
+});
+
+export const ReportQuerySchema = z.object({
+    from: z.string().date().optional(),
+    to: z.string().date().optional(),
+});

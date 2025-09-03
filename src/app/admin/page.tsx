@@ -42,6 +42,8 @@ export default function EnhancedAdminPage() {
 
   // Use parliament updates hook
   const { updates: parliamentUpdates, loading: parliamentLoading } = useParliamentUpdates();
+  
+  console.log("Loaded admin dashboard with loading: ", loading);
 
   useEffect(() => {
     const checkAuth = () => {

@@ -26,8 +26,13 @@ export default function Home() {
     switch (role) {
       case 'admin':
         return '/admin';
+      case 'law-firm-admin':
+      	return '/lawfirm';
       case 'judge':
         return '/judges';
+        
+      case 'chief-registry-magistrate':				//court admin
+      	return '/judge-admin';
       case 'lawyer':
         return '/lawyers';
       case 'public':

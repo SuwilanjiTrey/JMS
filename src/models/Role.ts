@@ -1,4 +1,13 @@
-export type UserRole = 'admin' | 'judge' | 'lawyer' | 'public';
+// In your models file
+export type UserRole = 
+  | 'admin'
+  | 'super-admin'
+  | 'law-firm-admin'
+  | 'court-admin'
+  | 'judge'
+  | 'lawyer'
+  | 'public'
+  | CourtType;
 
 export interface Role {
   id: string;

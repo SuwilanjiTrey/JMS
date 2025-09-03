@@ -1,5 +1,4 @@
 'use client';
-
 import { useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
@@ -23,39 +22,47 @@ import {
   User,
   Gavel,
   FileText,
-  Calendar
+  Calendar,
+  Building
 } from 'lucide-react';
 import { UserRole } from '@/models';
+import { useAuth } from '@/contexts/AuthContext';
 
 interface NavbarProps {
-  userRole?: UserRole;
-  userName?: string;
-  userAvatar?: string;
+  // We'll remove the props and use the auth context instead
 }
 
-export default function Navbar({ userRole, userName, userAvatar }: NavbarProps) {
+export default function Navbar() {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const router = useRouter();
+  const { user, logout } = useAuth();
 
-const getRoleBadgeColor = (role: UserRole) => {
-  switch (role) {
-    case 'admin':
-      return 'bg-orange-500 text-white'; // Zambia orange → orange-500
-    case 'judge':
-      return 'bg-green-600 text-white'; // Zambia green → green-600
-    case 'lawyer':
-      return 'bg-blue-100 text-blue-800';
-    case 'public':
-      return 'bg-gray-100 text-gray-800';
-    default:
-      return 'bg-gray-100 text-gray-800';
-  }
-};
-
+  const getRoleBadgeColor = (role: UserRole) => {
+    switch (role) {
+      case 'admin':
+      case 'super-admin':
+        return 'bg-orange-500 text-white'; // Zambia orange → orange-500
+      case 'law-firm-admin':
+        return 'bg-purple-500 text-white'; // Purple for law firm admins
+      case 'court-admin':
+        return 'bg-teal-500 text-white'; // Teal for court admins
+      case 'judge':
+        return 'bg-green-600 text-white'; // Zambia green → green-600
+      case 'lawyer':
+        return 'bg-blue-100 text-blue-800';
+      case 'public':
+        return 'bg-gray-100 text-gray-800';
+      default:
+        return 'bg-gray-100 text-gray-800';
+    }
+  };
 
   const getDashboardPath = (role: UserRole) => {
     switch (role) {
       case 'admin':
+      case 'super-admin':
+      case 'law-firm-admin':
+      case 'court-admin':
         return '/admin';
       case 'judge':
         return '/judges';
@@ -68,12 +75,31 @@ const getRoleBadgeColor = (role: UserRole) => {
     }
   };
 
-  const handleLogout = () => {
-    // This will be replaced with actual logout logic
-    localStorage.removeItem('userRole');
-    localStorage.removeItem('userName');
-    router.push('/login');
+  const getRoleDisplayName = (role: UserRole) => {
+    switch (role) {
+      case 'super-admin':
+        return 'System Admin';
+      case 'law-firm-admin':
+        return 'Law Firm Admin';
+      case 'court-admin':
+        return 'Court Admin';
+      default:
+        return role.charAt(0).toUpperCase() + role.slice(1);
+    }
   };
+
+  const handleLogout = async () => {
+    try {
+      await logout();
+      router.push('/login');
+    } catch (error) {
+      console.error('Logout error:', error);
+    }
+  };
+
+  const userRole = user?.role;
+  const userName = user?.displayName;
+  const userAvatar = user?.photoURL;
 
   return (
     <nav className="bg-white border-b border-gray-200 sticky top-0 z-50">
@@ -82,13 +108,11 @@ const getRoleBadgeColor = (role: UserRole) => {
           {/* Logo and Brand */}
           <div className="flex items-center">
             <Link href={userRole ? getDashboardPath(userRole) : '/'} className="flex items-center">
-              
               <Gavel className="h-8 w-8 text-orange-500 mr-2" />
-<span className="text-xl font-bold text-gray-900">JMS Zambia</span>
-
+              <span className="text-xl font-bold text-gray-900">JMS Zambia</span>
             </Link>
           </div>
-
+          
           {/* Desktop Navigation */}
           {userRole && (
             <div className="hidden md:flex items-center space-x-4">
@@ -108,7 +132,7 @@ const getRoleBadgeColor = (role: UserRole) => {
                 </Link>
               )}
               
-              {(userRole === 'admin' || userRole === 'judge') && (
+              {(userRole === 'admin' || userRole === 'super-admin' || userRole === 'judge' || userRole === 'court-admin') && (
                 <Link 
                   href={`${getDashboardPath(userRole)}/calendar`}
                   className="text-gray-700 hover:text-orange-600 px-3 py-2 rounded-md text-sm font-medium"
@@ -117,12 +141,21 @@ const getRoleBadgeColor = (role: UserRole) => {
                 </Link>
               )}
               
-              {userRole === 'admin' && (
+              {(userRole === 'admin' || userRole === 'super-admin') && (
                 <Link 
                   href="/admin/users"
                   className="text-gray-700 hover:text-orange-600 px-3 py-2 rounded-md text-sm font-medium"
                 >
                   Users
+                </Link>
+              )}
+              
+              {(userRole === 'admin' || userRole === 'super-admin' || userRole === 'law-firm-admin') && (
+                <Link 
+                  href="/admin/law-firms"
+                  className="text-gray-700 hover:text-orange-600 px-3 py-2 rounded-md text-sm font-medium"
+                >
+                  Law Firms
                 </Link>
               )}
               
@@ -145,19 +178,19 @@ const getRoleBadgeColor = (role: UserRole) => {
               )}
             </div>
           )}
-
+          
           {/* Right side items */}
           <div className="flex items-center space-x-4">
             {/* Search */}
             <Button variant="ghost" size="sm">
               <Search className="h-4 w-4" />
             </Button>
-
+            
             {/* Notifications */}
             <Button variant="ghost" size="sm">
               <Bell className="h-4 w-4" />
             </Button>
-
+            
             {/* User Menu */}
             {userRole && userName && (
               <DropdownMenu>
@@ -172,7 +205,7 @@ const getRoleBadgeColor = (role: UserRole) => {
                     <div className="hidden md:block text-left">
                       <div className="text-sm font-medium">{userName}</div>
                       <Badge className={getRoleBadgeColor(userRole)}>
-                        {userRole}
+                        {getRoleDisplayName(userRole)}
                       </Badge>
                     </div>
                   </Button>
@@ -188,6 +221,28 @@ const getRoleBadgeColor = (role: UserRole) => {
                     <Settings className="mr-2 h-4 w-4" />
                     Settings
                   </DropdownMenuItem>
+                  
+                  {/* Role-specific menu items */}
+                  {userRole === 'law-firm-admin' && (
+                    <>
+                      <DropdownMenuSeparator />
+                      <DropdownMenuItem>
+                        <Building className="mr-2 h-4 w-4" />
+                        Manage Law Firm
+                      </DropdownMenuItem>
+                    </>
+                  )}
+                  
+                  {userRole === 'court-admin' && (
+                    <>
+                      <DropdownMenuSeparator />
+                      <DropdownMenuItem>
+                        <Gavel className="mr-2 h-4 w-4" />
+                        Manage Court
+                      </DropdownMenuItem>
+                    </>
+                  )}
+                  
                   <DropdownMenuSeparator />
                   <DropdownMenuItem onClick={handleLogout}>
                     <LogOut className="mr-2 h-4 w-4" />
@@ -196,7 +251,7 @@ const getRoleBadgeColor = (role: UserRole) => {
                 </DropdownMenuContent>
               </DropdownMenu>
             )}
-
+            
             {/* Mobile menu button */}
             {userRole && (
               <Button
@@ -211,7 +266,7 @@ const getRoleBadgeColor = (role: UserRole) => {
           </div>
         </div>
       </div>
-
+      
       {/* Mobile menu */}
       {isMobileMenuOpen && userRole && (
         <div className="md:hidden">
@@ -232,7 +287,7 @@ const getRoleBadgeColor = (role: UserRole) => {
               </Link>
             )}
             
-            {(userRole === 'admin' || userRole === 'judge') && (
+            {(userRole === 'admin' || userRole === 'super-admin' || userRole === 'judge' || userRole === 'court-admin') && (
               <Link
                 href={`${getDashboardPath(userRole)}/calendar`}
                 className="text-gray-700 hover:text-orange-600 block px-3 py-2 rounded-md text-base font-medium"
@@ -241,12 +296,21 @@ const getRoleBadgeColor = (role: UserRole) => {
               </Link>
             )}
             
-            {userRole === 'admin' && (
+            {(userRole === 'admin' || userRole === 'super-admin') && (
               <Link
                 href="/admin/users"
                 className="text-gray-700 hover:text-orange-600 block px-3 py-2 rounded-md text-base font-medium"
               >
                 Users
+              </Link>
+            )}
+            
+            {(userRole === 'admin' || userRole === 'super-admin' || userRole === 'law-firm-admin') && (
+              <Link
+                href="/admin/law-firms"
+                className="text-gray-700 hover:text-orange-600 block px-3 py-2 rounded-md text-base font-medium"
+              >
+                Law Firms
               </Link>
             )}
             

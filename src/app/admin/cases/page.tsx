@@ -33,13 +33,19 @@ import {
   uploadData,
   setDetails,
   getAll,
-  deleteData
+  getAllWhereEquals,
+  deleteData,
 } from '@/lib/utils/firebase/general';
 import { COLLECTIONS } from '@/lib/constants/firebase/collections';
 
 import { CaseCard, PartyFormSection, MobileFilterPanel } from '@/components/exports/cases_module';
 import type { CasesModuleConfig, CasesModuleProps } from '@/components/exports/cases_module';
 import { defaultConfig } from '@/components/exports/cases_module';
+import CaseTimeline from '@/components/CaseTimeline';
+import { trackStatusChange } from '@/lib/utils/caseHistory';
+import { CaseProcessStage } from '@/models';
+import ProcessStageManager from '@/components/ProcessStageManager';
+import { trackProcessStage } from '@/lib/utils/caseHistory';
 
 export default function AdminCases({
   config = defaultConfig,
@@ -66,6 +72,9 @@ export default function AdminCases({
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
+  const [showHistoryDialog, setShowHistoryDialog] = useState(false);
+  const [selectedCaseForHistory, setSelectedCaseForHistory] = useState<Case | null>(null);
+  const [processStages, setProcessStages] = useState<CaseProcessStage[]>([]);
 
   // Case form state
   const [caseForm, setCaseForm] = useState<CaseCreationData & { id?: string }>({
@@ -272,11 +281,21 @@ export default function AdminCases({
     setSelectedCase(null);
   };
 
+  // In your cases page, update the updateCaseStatus function:
   const updateCaseStatus = async (caseId: string, newStatus: CaseStatus) => {
     setSubmitting(true);
     try {
       const caseToUpdate = cases.find(c => c.id === caseId);
       if (!caseToUpdate) return;
+
+      // Track the status change in history
+      await trackStatusChange(
+        caseId,
+        newStatus,
+        'current_user_id', // Replace with actual user ID
+        `Status changed from ${caseToUpdate.status} to ${newStatus}`,
+        caseToUpdate.status
+      );
 
       const updatedCase = {
         ...caseToUpdate,
@@ -300,7 +319,6 @@ export default function AdminCases({
       setSubmitting(false);
     }
   };
-
   const addParty = (type: 'plaintiffs' | 'defendants') => {
     setCaseForm(prev => ({
       ...prev,
@@ -335,10 +353,23 @@ export default function AdminCases({
     return matchesSearch && matchesStatus && matchesPriority && matchesType;
   });
 
-  const viewCaseDetails = (caseItem: Case) => {
+
+  const viewCaseDetails = async (caseItem: Case) => {
     setSelectedCase(caseItem);
     setShowDetailsDialog(true);
     onCaseSelect?.(caseItem);
+
+    // Fetch process stages for this case
+    try {
+      const stages = await getAllWhereEquals(
+        COLLECTIONS.CASE_PROCESS_STAGES,
+        'caseId',
+        caseItem.id
+      ) as CaseProcessStage[];
+      setProcessStages(stages);
+    } catch (error) {
+      console.error('Error fetching process stages:', error);
+    }
   };
 
   // Grid columns based on config
@@ -346,6 +377,12 @@ export default function AdminCases({
     const { mobile, tablet, desktop } = mergedConfig.cardLayoutColumns!;
     return `grid grid-cols-${mobile} md:grid-cols-${tablet} lg:grid-cols-${desktop} gap-4 sm:gap-6`;
   };
+
+  const handleViewHistory = (caseItem: Case) => {
+    setSelectedCaseForHistory(caseItem);
+    setShowHistoryDialog(true);
+  };
+
 
   return (
     <div className="w-full max-w-7xl mx-auto p-3 sm:p-6 space-y-4 sm:space-y-6">
@@ -551,6 +588,7 @@ export default function AdminCases({
               submitting={submitting}
               config={mergedConfig}
               customActions={customActions}
+              onViewHistory={handleViewHistory}
             />
           ))}
         </div>
@@ -785,6 +823,28 @@ export default function AdminCases({
 
           {selectedCase && (
             <div className="space-y-4 sm:space-y-6">
+              <ProcessStageManager
+                caseId={selectedCase.id}
+                currentStages={processStages.map(stage => ({
+                  stage: stage.stage,
+                  date: stage.date
+                }))}
+                onStageComplete={async (stageType, notes) => {
+                  await trackProcessStage(
+                    selectedCase.id,
+                    stageType,
+                    'current_user_id', // Replace with actual user ID from auth context
+                    notes
+                  );
+                  // Refresh the process stages
+                  const updatedStages = await getAllWhereEquals(
+                    COLLECTIONS.CASE_PROCESS_STAGES,
+                    'caseId',
+                    selectedCase.id
+                  ) as CaseProcessStage[];
+                  setProcessStages(updatedStages);
+                }}
+              />
               {/* Case Overview - Mobile Stacked */}
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-6">
                 <Card className="p-3 sm:p-4">
@@ -965,6 +1025,17 @@ export default function AdminCases({
                     ))}
                   </div>
                 </Card>
+              )}
+
+              {selectedCaseForHistory && (
+                <CaseTimeline
+                  caseItem={selectedCaseForHistory}
+                  isOpen={showHistoryDialog}
+                  onClose={() => {
+                    setShowHistoryDialog(false);
+                    setSelectedCaseForHistory(null);
+                  }}
+                />
               )}
             </div>
           )}

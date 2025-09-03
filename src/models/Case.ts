@@ -152,3 +152,32 @@ export const CASE_TYPE_LABELS: Record<CaseType, string> = {
   constitutional: 'Constitutional',
   other: 'Other'
 };
+
+export interface CaseStatusHistory {
+  id: string;
+  caseId: string;
+  status: CaseStatus;
+  changedBy: string; // User ID
+  changedAt: Date;
+  notes?: string;
+  previousStatus?: CaseStatus;
+}
+
+export interface CaseProcessStage {
+  id: string;
+  caseId: string;
+  stage: CaseProcessStageType;
+  date: Date;
+  completedBy?: string; // User ID
+  notes?: string;
+  documents?: string[]; // Document IDs
+}
+
+export type CaseProcessStageType =
+  | 'filed'
+  | 'summons'
+  | 'takes_off'
+  | 'recording'
+  | 'adjournment'
+  | 'ruling'
+  | 'appeal';

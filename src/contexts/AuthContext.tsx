@@ -31,68 +31,75 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [loading, setLoading] = useState(true);
   const [isDemoUser, setIsDemoUser] = useState(false);
 
-  useEffect(() => {
-    const initializeAuth = async () => {
-      try {
-        // Check for existing user (demo or Firebase)
-        const currentUser = await getCurrentUser();
-        if (currentUser) {
-          setUser(currentUser);
-          setUserRole(currentUser.role);
-          setIsDemoUser(localStorage.getItem('isDemoUser') === 'true');
-          
-          // Store user info for easy access
-          localStorage.setItem('userRole', currentUser.role);
-          localStorage.setItem('userName', currentUser.displayName);
+useEffect(() => {
+  const initializeAuth = async () => {
+    try {
+      setUser(null);
+      setUserRole(null);
+      setIsDemoUser(false);
+
+      const isDemo = localStorage.getItem('isDemoUser') === 'true';
+      
+      if (isDemo) {
+        const demoData = localStorage.getItem('demoUserData');
+        if (demoData) {
+          const parsedUser = JSON.parse(demoData);
+          setUser(parsedUser);
+          setUserRole(parsedUser.role);
+          setIsDemoUser(true);
+          localStorage.setItem('userRole', parsedUser.role);
+          localStorage.setItem('userName', parsedUser.displayName);
+        } else {
+          localStorage.removeItem('isDemoUser');
         }
-      } catch (error) {
-        console.error('Error initializing auth:', error);
-      } finally {
-        setLoading(false);
       }
-    };
+    } catch (error) {
+      console.error('Error initializing auth:', error);
+      localStorage.removeItem('isDemoUser');
+      localStorage.removeItem('demoUserData');
+    } finally {
+      setLoading(false);
+    }
+  };
 
-    // Initialize auth state
-    initializeAuth();
+  initializeAuth();
 
-    // Set up Firebase auth state listener (only for non-demo users)
-    let unsubscribe: (() => void) | undefined;
-    
-    if (auth && localStorage.getItem('isDemoUser') !== 'true') {
-      unsubscribe = onAuthStateChanged(auth, async (firebaseUser: FirebaseUser | null) => {
-        if (firebaseUser && localStorage.getItem('isDemoUser') !== 'true') {
-          try {
-            const appUser = await firebaseUserToAppUser(firebaseUser);
-            if (appUser) {
-              setUser(appUser);
-              setUserRole(appUser.role);
-              setIsDemoUser(false);
-              
-              // Store in localStorage for easy access
-              localStorage.setItem('userRole', appUser.role);
-              localStorage.setItem('userName', appUser.displayName);
+  let unsubscribe: (() => void) | undefined;
+
+  if (auth && localStorage.getItem('isDemoUser') !== 'true') {
+    unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
+      const isDemoNow = localStorage.getItem('isDemoUser') === 'true';
+      if (isDemoNow) return;
+
+      if (firebaseUser) {
+        try {
+          const appUser = await firebaseUserToAppUser(firebaseUser);
+          if (appUser) {
+            setUser(appUser);
+            setUserRole(appUser.role);
+            setIsDemoUser(false);
+            localStorage.setItem('userRole', appUser.role);
+            localStorage.setItem('userName', appUser.displayName);
+            if (appUser.profile?.adminType) {
+              localStorage.setItem('adminType', appUser.profile.adminType);
             }
-          } catch (error) {
-            console.error('Error converting Firebase user:', error);
-            handleAuthError();
           }
-        } else if (!firebaseUser && localStorage.getItem('isDemoUser') !== 'true') {
-          // Only clear state if it's not a demo user
+        } catch (error) {
+          console.error('Error converting Firebase user:', error);
           handleAuthError();
         }
-        
-        if (!loading) {
-          setLoading(false);
-        }
-      });
-    }
-
-    return () => {
-      if (unsubscribe) {
-        unsubscribe();
+      } else {
+        handleAuthError();
       }
-    };
-  }, [loading]);
+    });
+  }
+
+  return () => {
+    if (unsubscribe) {
+      unsubscribe();
+    }
+  };
+}, []); // 👈 Empty dependency array
 
   const handleAuthError = () => {
     setUser(null);
@@ -130,28 +137,40 @@ const login = async (email: string, password: string): Promise<User> => {
 };
 
 
-  const logout = async () => {
-    try {
-      setLoading(true);
-      await logoutUser();
-      
-      setUser(null);
-      setUserRole(null);
-      setIsDemoUser(false);
-      
-      // Clear all auth-related localStorage items
-      localStorage.removeItem('userRole');
-      localStorage.removeItem('userName');
-      localStorage.removeItem('isDemoUser');
-      localStorage.removeItem('demoUserData');
-      
-    } catch (error) {
-      console.error('Logout error:', error);
-      throw error;
-    } finally {
-      setLoading(false);
-    }
-  };
+const logout = async () => {
+  try {
+    setLoading(true);
+
+    // Call your existing logout logic
+    await logoutUser(); // This already handles demo vs Firebase
+
+    // Manually clear all possible auth traces
+    setUser(null);
+    setUserRole(null);
+    setIsDemoUser(false);
+
+    // Wipe localStorage completely for auth
+    localStorage.removeItem('userRole');
+    localStorage.removeItem('userName');
+    localStorage.removeItem('isDemoUser');
+    localStorage.removeItem('demoUserData');
+    localStorage.removeItem('adminType'); // if you added this
+
+    // Optional: Clear sessionStorage too, just in case
+    sessionStorage.clear();
+
+    console.log('Logout complete - localStorage cleared');
+  } catch (error) {
+    console.error('Logout error:', error);
+    // Still clear state even if error
+    setUser(null);
+    setUserRole(null);
+    setIsDemoUser(false);
+    localStorage.clear(); // Nuclear option (optional)
+  } finally {
+    setLoading(false);
+  }
+};
 
 const register = async (userData: any): Promise<User> => {
   try {

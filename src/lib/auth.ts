@@ -10,7 +10,8 @@ import {
   onAuthStateChanged, 
   User as FirebaseUser,
   sendPasswordResetEmail,
-  updateProfile
+  updateProfile,
+  deleteUser
 } from 'firebase/auth';
 import { 
   doc, 
@@ -22,7 +23,8 @@ import {
   getDocs, 
   collection,
   addDoc,
-  serverTimestamp
+  serverTimestamp,
+  deleteDoc
 } from 'firebase/firestore';
 import { User, UserCreationData, UserUpdateData, UserRole, CourtType } from '@/models';
 import { demoCredentials } from '@/lib/constants/credentials';
@@ -143,6 +145,58 @@ export const updateLawFirm = async (lawFirmId: string, updateData: any) => {
   }
 };
 
+export const deleteLawFirm = async (lawFirmId: string) => {
+  try {
+    const lawFirmRef = doc(db, COLLECTIONS.LAW_FIRMS, lawFirmId);
+    
+    // Soft delete - mark as inactive instead of actually deleting
+    await updateDoc(lawFirmRef, {
+      isActive: false,
+      updatedAt: serverTimestamp()
+    });
+    
+    return true;
+  } catch (error) {
+    console.error('Error deleting law firm:', error);
+    throw error;
+  }
+};
+
+// User management functions
+export const deleteUserAccount = async (userId: string) => {
+  try {
+    // First, get the Firebase user
+    const userRef = doc(db, COLLECTIONS.USERS, userId);
+    const userDoc = await getDoc(userRef);
+    
+    if (!userDoc.exists()) {
+      throw new Error('User not found');
+    }
+    
+    const userData = userDoc.data();
+    
+    // Remove user from any law firms they're associated with
+    if (userData.profile?.lawFirmId) {
+      await removeUserFromLawFirm(userId, userData.profile.lawFirmId);
+    }
+    
+    // Mark user as inactive in Firestore
+    await updateDoc(userRef, {
+      isActive: false,
+      updatedAt: serverTimestamp()
+    });
+    
+    // Note: We're not actually deleting the Firebase Auth user here
+    // because it requires admin privileges and can't be done client-side
+    // In a real app, you'd want to handle this through a Cloud Function
+    
+    return true;
+  } catch (error) {
+    console.error('Error deleting user:', error);
+    throw error;
+  }
+};
+
 // Updated linkUserToLawFirm function
 export const linkUserToLawFirm = async (userId: string, lawFirmId: string, role: 'lawyer' | 'admin') => {
   try {
@@ -176,6 +230,46 @@ export const linkUserToLawFirm = async (userId: string, lawFirmId: string, role:
     return await getLawFirmById(lawFirmId);
   } catch (error) {
     console.error('Error linking user to law firm:', error);
+    throw error;
+  }
+};
+
+export const removeUserFromLawFirm = async (userId: string, lawFirmId: string) => {
+  try {
+    const lawFirmRef = doc(db, COLLECTIONS.LAW_FIRMS, lawFirmId);
+    const lawFirmDoc = await getDoc(lawFirmRef);
+    
+    if (!lawFirmDoc.exists()) {
+      throw new Error('Law firm not found');
+    }
+    
+    const currentData = lawFirmDoc.data();
+    const updateData: any = {
+      updatedAt: serverTimestamp()
+    };
+    
+    // Remove user from lawyers array
+    if (currentData.lawyers?.includes(userId)) {
+      updateData.lawyers = currentData.lawyers.filter((id: string) => id !== userId);
+    }
+    
+    // Remove user from administrators array
+    if (currentData.administrators?.includes(userId)) {
+      updateData.administrators = currentData.administrators.filter((id: string) => id !== userId);
+    }
+    
+    await updateDoc(lawFirmRef, updateData);
+    
+    // Also remove law firm ID from user profile
+    const userRef = doc(db, COLLECTIONS.USERS, userId);
+    await updateDoc(userRef, {
+      'profile.lawFirmId': null,
+      updatedAt: serverTimestamp()
+    });
+    
+    return await getLawFirmById(lawFirmId);
+  } catch (error) {
+    console.error('Error removing user from law firm:', error);
     throw error;
   }
 };
@@ -351,8 +445,18 @@ export const registerUserWithProfile = async (userData: UserCreationData): Promi
     
     // If it's a judge, create/update court record
     if (userData.role === 'judge') {
-      await createOrUpdateCourtRecord(firebaseUser.uid, userData);
-    }
+  await setDoc(doc(db, COLLECTIONS.USERS, firebaseUser.uid), {
+    ...newUser,
+    profile: {
+      ...userData.profile,
+      assignedCases: [],
+      assignedDocuments: [],
+      assignedEvents: []
+    },
+    createdAt: serverTimestamp(),
+    updatedAt: serverTimestamp()
+  });
+}
     
     return {
       id: firebaseUser.uid,
@@ -569,6 +673,619 @@ export const getUsersByLawFirm = async (lawFirmId: string): Promise<User[]> => {
     throw error;
   }
 };
+
+
+
+// Court management functions
+export const createCourt = async (courtData: {
+  type: CourtType;
+  location: string;
+  name: string;
+  description?: string;
+}) => {
+  try {
+    const courtId = `${courtData.type}-${courtData.location.toLowerCase().replace(/\s+/g, '-')}`;
+    const courtRef = doc(db, COLLECTIONS.COURTS, courtId);
+    
+    const newCourt = {
+      id: courtId,
+      type: courtData.type,
+      location: courtData.location,
+      name: courtData.name,
+      description: courtData.description || '',
+      judges: [],
+      administrators: [],
+      cases: [],
+      createdAt: serverTimestamp(),
+      updatedAt: serverTimestamp(),
+      isActive: true
+    };
+    
+    await setDoc(courtRef, newCourt);
+    return {
+      ...newCourt,
+      createdAt: new Date(),
+      updatedAt: new Date()
+    };
+  } catch (error) {
+    console.error('Error creating court:', error);
+    throw error;
+  }
+};
+
+export const getAllCourts = async () => {
+  try {
+    const courtsRef = collection(db, COLLECTIONS.COURTS);
+    const q = query(courtsRef, where('isActive', '==', true));
+    const querySnapshot = await getDocs(q);
+    
+    const courts: any[] = [];
+    querySnapshot.forEach((doc) => {
+      const data = doc.data();
+      courts.push({
+        id: doc.id,
+        name: data.name,
+        type: data.type,
+        location: data.location,
+        description: data.description,
+        judges: data.judges || [],
+        administrators: data.administrators || [],
+        cases: data.cases || [],
+        createdAt: data.createdAt?.toDate() || new Date(),
+        updatedAt: data.updatedAt?.toDate() || new Date()
+      });
+    });
+    
+    return courts;
+  } catch (error) {
+    console.error('Error fetching courts:', error);
+    throw error;
+  }
+};
+
+export const getCourtById = async (courtId: string) => {
+  try {
+    const courtRef = doc(db, COLLECTIONS.COURTS, courtId);
+    const courtDoc = await getDoc(courtRef);
+    
+    if (!courtDoc.exists()) {
+      throw new Error('Court not found');
+    }
+    
+    const data = courtDoc.data();
+    return {
+      id: courtDoc.id,
+      name: data.name,
+      type: data.type,
+      location: data.location,
+      description: data.description,
+      judges: data.judges || [],
+      administrators: data.administrators || [],
+      cases: data.cases || [],
+      createdAt: data.createdAt?.toDate() || new Date(),
+      updatedAt: data.updatedAt?.toDate() || new Date()
+    };
+  } catch (error) {
+    console.error('Error fetching court:', error);
+    throw error;
+  }
+};
+
+export const updateCourt = async (courtId: string, updateData: any) => {
+  try {
+    const courtRef = doc(db, COLLECTIONS.COURTS, courtId);
+    await updateDoc(courtRef, {
+      ...updateData,
+      updatedAt: serverTimestamp()
+    });
+    
+    return await getCourtById(courtId);
+  } catch (error) {
+    console.error('Error updating court:', error);
+    throw error;
+  }
+};
+
+export const deleteCourt = async (courtId: string) => {
+  try {
+    const courtRef = doc(db, COLLECTIONS.COURTS, courtId);
+    
+    // Soft delete - mark as inactive instead of actually deleting
+    await updateDoc(courtRef, {
+      isActive: false,
+      updatedAt: serverTimestamp()
+    });
+    
+    return true;
+  } catch (error) {
+    console.error('Error deleting court:', error);
+    throw error;
+  }
+};
+
+export const assignJudgeToCourt = async (courtId: string, judgeId: string) => {
+  try {
+    const courtRef = doc(db, COLLECTIONS.COURTS, courtId);
+    const courtDoc = await getDoc(courtRef);
+    
+    if (!courtDoc.exists()) {
+      throw new Error('Court not found');
+    }
+    
+    const currentData = courtDoc.data();
+    const judges = currentData.judges || [];
+    
+    if (!judges.includes(judgeId)) {
+      await updateDoc(courtRef, {
+        judges: [...judges, judgeId],
+        updatedAt: serverTimestamp()
+      });
+    }
+    
+    // Also update the user's profile with the court information
+    const userRef = doc(db, COLLECTIONS.USERS, judgeId);
+    await updateDoc(userRef, {
+      'profile.courtId': courtId,
+      updatedAt: serverTimestamp()
+    });
+    
+    return await getCourtById(courtId);
+  } catch (error) {
+    console.error('Error assigning judge to court:', error);
+    throw error;
+  }
+};
+
+export const removeJudgeFromCourt = async (courtId: string, judgeId: string) => {
+  try {
+    const courtRef = doc(db, COLLECTIONS.COURTS, courtId);
+    const courtDoc = await getDoc(courtRef);
+    
+    if (!courtDoc.exists()) {
+      throw new Error('Court not found');
+    }
+    
+    const currentData = courtDoc.data();
+    const judges = currentData.judges || [];
+    
+    if (judges.includes(judgeId)) {
+      await updateDoc(courtRef, {
+        judges: judges.filter(id => id !== judgeId),
+        updatedAt: serverTimestamp()
+      });
+    }
+    
+    // Also remove court ID from user's profile
+    const userRef = doc(db, COLLECTIONS.USERS, judgeId);
+    await updateDoc(userRef, {
+      'profile.courtId': null,
+      updatedAt: serverTimestamp()
+    });
+    
+    return await getCourtById(courtId);
+  } catch (error) {
+    console.error('Error removing judge from court:', error);
+    throw error;
+  }
+};
+
+// Case management functions
+export const createCase = async (caseData: {
+  title: string;
+  description: string;
+  caseNumber: string;
+  courtId: string;
+  judgeId?: string;
+  plaintiff: string;
+  defendant: string;
+  filingDate: Date;
+  status: 'pending' | 'active' | 'closed' | 'appealed';
+  priority: 'low' | 'medium' | 'high' | 'urgent';
+}) => {
+  try {
+    const casesRef = collection(db, COLLECTIONS.CASES);
+    const newCase = {
+      ...caseData,
+      createdAt: serverTimestamp(),
+      updatedAt: serverTimestamp(),
+      isActive: true
+    };
+    
+    const docRef = await addDoc(casesRef, newCase);
+    
+    // Add case to court
+    const courtRef = doc(db, COLLECTIONS.COURTS, caseData.courtId);
+    const courtDoc = await getDoc(courtRef);
+    
+    if (courtDoc.exists()) {
+      const currentData = courtDoc.data();
+      const cases = currentData.cases || [];
+      
+      await updateDoc(courtRef, {
+        cases: [...cases, docRef.id],
+        updatedAt: serverTimestamp()
+      });
+    }
+    
+    return {
+      id: docRef.id,
+      ...newCase,
+      createdAt: new Date(),
+      updatedAt: new Date()
+    };
+  } catch (error) {
+    console.error('Error creating case:', error);
+    throw error;
+  }
+};
+
+export const getCasesByCourt = async (courtId: string) => {
+  try {
+    const q = query(
+      collection(db, COLLECTIONS.CASES),
+      where('courtId', '==', courtId),
+      where('isActive', '==', true)
+    );
+    
+    const querySnapshot = await getDocs(q);
+    const cases: any[] = [];
+    
+    querySnapshot.forEach((doc) => {
+      const data = doc.data();
+      cases.push({
+        id: doc.id,
+        ...data,
+        createdAt: data.createdAt?.toDate() || new Date(),
+        updatedAt: data.updatedAt?.toDate() || new Date(),
+        filingDate: data.filingDate?.toDate() || new Date()
+      });
+    });
+    
+    return cases;
+  } catch (error) {
+    console.error('Error fetching cases by court:', error);
+    throw error;
+  }
+};
+
+// Update the assignCaseToJudge function to store document references
+export const assignCaseToJudge = async (caseId: string, judgeId: string) => {
+  try {
+    const caseRef = doc(db, COLLECTIONS.CASES, caseId);
+    const judgeRef = doc(db, COLLECTIONS.USERS, judgeId);
+    
+    // Update the case with judge ID
+    await updateDoc(caseRef, {
+      judgeId,
+      updatedAt: serverTimestamp()
+    });
+    
+    // Update the judge's profile with a reference to the case
+    const judgeDoc = await getDoc(judgeRef);
+    if (judgeDoc.exists()) {
+      const currentData = judgeDoc.data();
+      const assignedCases = currentData.profile?.assignedCases || [];
+      
+      // Check if case is already assigned
+      const caseExists = assignedCases.some((ref: any) => ref.id === caseId);
+      
+      if (!caseExists) {
+        await updateDoc(judgeRef, {
+          'profile.assignedCases': [...assignedCases, caseRef],
+          updatedAt: serverTimestamp()
+        });
+      }
+    }
+    
+    return await getCaseById(caseId);
+  } catch (error) {
+    console.error('Error assigning case to judge:', error);
+    throw error;
+  }
+};
+
+
+export const getCaseById = async (caseId: string) => {
+  try {
+    const caseRef = doc(db, COLLECTIONS.CASES, caseId);
+    const caseDoc = await getDoc(caseRef);
+    
+    if (!caseDoc.exists()) {
+      throw new Error('Case not found');
+    }
+    
+    const data = caseDoc.data();
+    return {
+      id: caseDoc.id,
+      ...data,
+      createdAt: data.createdAt?.toDate() || new Date(),
+      updatedAt: data.updatedAt?.toDate() || new Date(),
+      filingDate: data.filingDate?.toDate() || new Date()
+    };
+  } catch (error) {
+    console.error('Error fetching case:', error);
+    throw error;
+  }
+};
+
+// Update the createCalendarEvent function to ensure it properly stores the judge's UID when provided
+//updayte the createCalendarEvent function to store document references
+export const createCalendarEvent = async (eventData: {
+  title: string;
+  description: string;
+  courtId: string;
+  judgeId?: string;
+  caseId?: string;
+  startTime: Date;
+  endTime: Date;
+  location: string;
+  eventType: 'hearing' | 'trial' | 'meeting' | 'other';
+}) => {
+  try {
+    const eventsRef = collection(db, COLLECTIONS.CALENDAR_EVENTS);
+    const newEvent = {
+      ...eventData,
+      createdAt: serverTimestamp(),
+      updatedAt: serverTimestamp(),
+      isActive: true
+    };
+    
+    const docRef = await addDoc(eventsRef, newEvent);
+    
+    // If a judge is assigned, update the judge's profile with a reference to the event
+    if (eventData.judgeId) {
+      const judgeRef = doc(db, COLLECTIONS.USERS, eventData.judgeId);
+      const judgeDoc = await getDoc(judgeRef);
+      
+      if (judgeDoc.exists()) {
+        const currentData = judgeDoc.data();
+        const assignedEvents = currentData.profile?.assignedEvents || [];
+        
+        // Check if event is already assigned
+        const eventExists = assignedEvents.some((ref: any) => ref.id === docRef.id);
+        
+        if (!eventExists) {
+          await updateDoc(judgeRef, {
+            'profile.assignedEvents': [...assignedEvents, docRef],
+            updatedAt: serverTimestamp()
+          });
+        }
+      }
+    }
+    
+    return {
+      id: docRef.id,
+      ...newEvent,
+      createdAt: new Date(),
+      updatedAt: new Date()
+    };
+  } catch (error) {
+    console.error('Error creating calendar event:', error);
+    throw error;
+  }
+};
+
+
+// Add a function to assign documents to judges
+export const assignDocumentToJudge = async (documentId: string, judgeId: string) => {
+  try {
+    const docRef = doc(db, COLLECTIONS.DOCUMENTS, documentId);
+    const judgeRef = doc(db, COLLECTIONS.USERS, judgeId);
+    
+    // Update the document with judge ID
+    await updateDoc(docRef, {
+      judgeId,
+      updatedAt: serverTimestamp()
+    });
+    
+    // Update the judge's profile with a reference to the document
+    const judgeDoc = await getDoc(judgeRef);
+    if (judgeDoc.exists()) {
+      const currentData = judgeDoc.data();
+      const assignedDocuments = currentData.profile?.assignedDocuments || [];
+      
+      // Check if document is already assigned
+      const docExists = assignedDocuments.some((ref: any) => ref.id === documentId);
+      
+      if (!docExists) {
+        await updateDoc(judgeRef, {
+          'profile.assignedDocuments': [...assignedDocuments, docRef],
+          updatedAt: serverTimestamp()
+        });
+      }
+    }
+    
+    return await getDocumentById(documentId);
+  } catch (error) {
+    console.error('Error assigning document to judge:', error);
+    throw error;
+  }
+};
+
+// Helper function to get document by ID
+const getDocumentById = async (documentId: string) => {
+  try {
+    const docRef = doc(db, COLLECTIONS.DOCUMENTS, documentId);
+    const docSnapshot = await getDoc(docRef);
+    
+    if (!docSnapshot.exists()) {
+      throw new Error('Document not found');
+    }
+    
+    const data = docSnapshot.data();
+    return {
+      id: docSnapshot.id,
+      ...data,
+      createdAt: data.createdAt?.toDate() || new Date(),
+      updatedAt: data.updatedAt?.toDate() || new Date(),
+      uploadDate: data.uploadDate?.toDate() || new Date()
+    };
+  } catch (error) {
+    console.error('Error fetching document:', error);
+    throw error;
+  }
+};
+
+//judge functions start here====================================================================================//
+export const getCalendarEventsByCourt = async (courtId: string) => {
+  try {
+    const q = query(
+      collection(db, COLLECTIONS.CALENDAR_EVENTS),
+      where('courtId', '==', courtId),
+      where('isActive', '==', true)
+    );
+    
+    const querySnapshot = await getDocs(q);
+    const events: any[] = [];
+    
+    querySnapshot.forEach((doc) => {
+      const data = doc.data();
+      events.push({
+        id: doc.id,
+        ...data,
+        startTime: data.startTime?.toDate() || new Date(),
+        endTime: data.endTime?.toDate() || new Date(),
+        createdAt: data.createdAt?.toDate() || new Date(),
+        updatedAt: data.updatedAt?.toDate() || new Date()
+      });
+    });
+    
+    return events;
+  } catch (error) {
+    console.error('Error fetching calendar events by court:', error);
+    throw error;
+  }
+};
+
+
+// New function to get cases by judge - using document references
+export const getCasesByJudge = async (judgeId: string) => {
+  try {
+    // First get the judge's document to retrieve assigned case references
+    const judgeRef = doc(db, COLLECTIONS.USERS, judgeId);
+    const judgeDoc = await getDoc(judgeRef);
+    
+    if (!judgeDoc.exists()) {
+      throw new Error('Judge not found');
+    }
+    
+    const judgeData = judgeDoc.data();
+    const assignedCases = judgeData.profile?.assignedCases || [];
+    
+    if (assignedCases.length === 0) {
+      return [];
+    }
+    
+    // Fetch each case document individually
+    const cases: any[] = [];
+    for (const caseRef of assignedCases) {
+      const caseSnapshot = await getDoc(caseRef);
+      if (caseSnapshot.exists() && caseSnapshot.data().isActive) {
+        const data = caseSnapshot.data();
+        cases.push({
+          id: caseSnapshot.id,
+          ...data,
+          createdAt: data.createdAt?.toDate() || new Date(),
+          updatedAt: data.updatedAt?.toDate() || new Date(),
+          filingDate: data.filingDate?.toDate() || new Date()
+        });
+      }
+    }
+    
+    return cases;
+  } catch (error) {
+    console.error('Error fetching cases by judge:', error);
+    throw error;
+  }
+};
+
+// New function to get documents by judge - using document references
+export const getDocumentsByJudge = async (judgeId: string) => {
+  try {
+    // First get the judge's document to retrieve assigned document references
+    const judgeRef = doc(db, COLLECTIONS.USERS, judgeId);
+    const judgeDoc = await getDoc(judgeRef);
+    
+    if (!judgeDoc.exists()) {
+      throw new Error('Judge not found');
+    }
+    
+    const judgeData = judgeDoc.data();
+    const assignedDocuments = judgeData.profile?.assignedDocuments || [];
+    
+    if (assignedDocuments.length === 0) {
+      return [];
+    }
+    
+    // Fetch each document individually
+    const documents: any[] = [];
+    for (const docRef of assignedDocuments) {
+      const docSnapshot = await getDoc(docRef);
+      if (docSnapshot.exists() && docSnapshot.data().isActive) {
+        const data = docSnapshot.data();
+        documents.push({
+          id: docSnapshot.id,
+          ...data,
+          createdAt: data.createdAt?.toDate() || new Date(),
+          updatedAt: data.updatedAt?.toDate() || new Date(),
+          uploadDate: data.uploadDate?.toDate() || new Date()
+        });
+      }
+    }
+    
+    return documents;
+  } catch (error) {    
+    console.error('Error fetching documents by judge:', error);
+    throw error;
+  }
+};
+
+// New function to get calendar events by judge - using document references
+export const getCalendarEventsByJudge = async (judgeId: string) => {
+  try {
+    // First get the judge's document to retrieve assigned event references
+    const judgeRef = doc(db, COLLECTIONS.USERS, judgeId);
+    const judgeDoc = await getDoc(judgeRef);
+    
+    if (!judgeDoc.exists()) {
+      throw new Error('Judge not found');
+    }
+    
+    const judgeData = judgeDoc.data();
+    const assignedEvents = judgeData.profile?.assignedEvents || [];
+    
+    if (assignedEvents.length === 0) {
+      return [];
+    }
+    
+    // Fetch each event individually
+    const events: any[] = [];
+    for (const eventRef of assignedEvents) {
+      const eventSnapshot = await getDoc(eventRef);
+      if (eventSnapshot.exists() && eventSnapshot.data().isActive) {
+        const data = eventSnapshot.data();
+        events.push({
+          id: eventSnapshot.id,
+          ...data,
+          startTime: data.startTime?.toDate() || new Date(),
+          endTime: data.endTime?.toDate() || new Date(),
+          createdAt: data.createdAt?.toDate() || new Date(),
+          updatedAt: data.updatedAt?.toDate() || new Date()
+        });
+      }
+    }
+    
+    return events;
+  } catch (error) {
+    console.error('Error fetching calendar events by judge:', error);
+    throw error;
+  }
+};
+
+
+//===========================//judge functions end here //=================================================//
+
+
 
 // Auth state observer
 export const onAuthStateChange = (callback: (user: User | null) => void) => {

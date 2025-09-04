@@ -3,7 +3,7 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Calendar, Clock, User, FileText, MoreHorizontal, Eye, Edit } from 'lucide-react';
+import { Calendar, Clock, User, FileText, MoreHorizontal, Eye, Edit, History } from 'lucide-react';
 import { Case, CaseStatus, CasePriority, CaseType } from '@/models';
 import { format } from 'date-fns';
 
@@ -13,12 +13,14 @@ interface CaseCardProps {
   onEdit?: (caseId: string) => void;
   showActions?: boolean;
   compact?: boolean;
+  onViewHistory: (caseItem: Case) => void;
 }
 
 export default function CaseCard({ 
   caseData, 
   onView, 
   onEdit, 
+  onViewHistory,
   showActions = true, 
   compact = false 
 }: CaseCardProps) {
@@ -220,6 +222,18 @@ export default function CaseCard({
               )}
             </div>
           )}
+          {/** Div that centers its children */}
+          <div className="flex justify-center">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => onViewHistory(caseData)}
+              className="flex items-center gap-1"
+            >
+              <History className="w-4 h-4" />
+              <span className="hidden sm:inline">History</span>
+            </Button>
+          </div>
         </div>
       </CardContent>
     </Card>

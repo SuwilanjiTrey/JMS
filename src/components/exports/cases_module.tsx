@@ -27,7 +27,8 @@ import {
   Loader2,
   Trash2,
   Filter,
-  MoreVertical
+  MoreVertical,
+  History
 } from 'lucide-react';
 import {
   DropdownMenu,
@@ -103,17 +104,17 @@ export const defaultConfig: CasesModuleConfig = {
 };
 
 // Mobile-optimized Filter Panel Component
-const MobileFilterPanel = ({ 
-  searchTerm, 
-  setSearchTerm, 
-  statusFilter, 
-  setStatusFilter, 
-  priorityFilter, 
-  setPriorityFilter, 
-  typeFilter, 
+const MobileFilterPanel = ({
+  searchTerm,
+  setSearchTerm,
+  statusFilter,
+  setStatusFilter,
+  priorityFilter,
+  setPriorityFilter,
+  typeFilter,
   setTypeFilter,
   isOpen,
-  setIsOpen 
+  setIsOpen
 }: any) => {
   const [localFilters, setLocalFilters] = useState({
     status: statusFilter,
@@ -146,7 +147,7 @@ const MobileFilterPanel = ({
         <div className="space-y-4">
           <div className="space-y-2">
             <Label>Status</Label>
-            <Select value={localFilters.status} onValueChange={(value) => 
+            <Select value={localFilters.status} onValueChange={(value) =>
               setLocalFilters(prev => ({ ...prev, status: value }))
             }>
               <SelectTrigger>
@@ -166,7 +167,7 @@ const MobileFilterPanel = ({
 
           <div className="space-y-2">
             <Label>Priority</Label>
-            <Select value={localFilters.priority} onValueChange={(value) => 
+            <Select value={localFilters.priority} onValueChange={(value) =>
               setLocalFilters(prev => ({ ...prev, priority: value }))
             }>
               <SelectTrigger>
@@ -184,7 +185,7 @@ const MobileFilterPanel = ({
 
           <div className="space-y-2">
             <Label>Type</Label>
-            <Select value={localFilters.type} onValueChange={(value) => 
+            <Select value={localFilters.type} onValueChange={(value) =>
               setLocalFilters(prev => ({ ...prev, type: value }))
             }>
               <SelectTrigger>
@@ -214,12 +215,13 @@ const MobileFilterPanel = ({
 };
 
 // Mobile-optimized Case Card Component
-const CaseCard = ({ 
-  caseItem, 
-  onView, 
-  onEdit, 
-  onStatusUpdate, 
-  submitting, 
+const CaseCard = ({
+  caseItem,
+  onView,
+  onEdit,
+  onStatusUpdate,
+  onViewHistory,  
+  submitting,
   config,
   customActions = []
 }: {
@@ -227,6 +229,7 @@ const CaseCard = ({
   onView: (caseItem: Case) => void;
   onEdit: (caseItem: Case) => void;
   onStatusUpdate: (caseId: string, status: CaseStatus) => void;
+  onViewHistory: (caseItem: Case) => void;
   submitting: boolean;
   config: CasesModuleConfig;
   customActions?: Array<{
@@ -326,7 +329,7 @@ const CaseCard = ({
                 <span className="hidden xs:inline">Edit</span>
               </Button>
             )}
-            
+
             {/* Mobile Menu for Additional Actions */}
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
@@ -365,8 +368,8 @@ const CaseCard = ({
           {/* Status Update - Desktop Only */}
           {config.enableStatusUpdate && (
             <div className="hidden md:block">
-              <Select 
-                onValueChange={(value: CaseStatus) => onStatusUpdate(caseItem.id, value)} 
+              <Select
+                onValueChange={(value: CaseStatus) => onStatusUpdate(caseItem.id, value)}
                 disabled={submitting}
               >
                 <SelectTrigger className="w-full text-xs">
@@ -384,20 +387,31 @@ const CaseCard = ({
             </div>
           )}
         </div>
+        <div className="flex justify-center">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => onViewHistory(caseItem)}
+            className="flex items-center gap-1"
+          >
+            <History className="w-4 h-4" />
+            <span className="hidden sm:inline">History</span>
+          </Button>
+        </div>
       </CardContent>
     </Card>
   );
 };
 
 // Party Form Component
-const PartyFormSection = ({ 
-  parties, 
-  type, 
-  onAdd, 
-  onUpdate, 
-  onRemove, 
-  label, 
-  colorScheme 
+const PartyFormSection = ({
+  parties,
+  type,
+  onAdd,
+  onUpdate,
+  onRemove,
+  label,
+  colorScheme
 }: {
   parties: CaseParty[];
   type: 'plaintiffs' | 'defendants';
@@ -440,7 +454,7 @@ const PartyFormSection = ({
           Add
         </Button>
       </div>
-      
+
       <div className="space-y-2">
         {parties.map((party, index) => (
           <Card key={index} className={`p-3 ${scheme.cardBg} ${scheme.border}`}>

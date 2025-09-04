@@ -46,36 +46,49 @@ export default function LoginPage() {
     }
   };
 
-  const getDashboardPath = (role: UserRole, adminType?: string): string => {
-    switch (role) {
-      case 'admin':
-        // Check for admin subtypes
-        if (adminType === 'law-firm-admin' ) {
-          return '/lawfirm';
-        }
-        if (adminType === 'court-admin') {
-          return '/judge-admin';
-        }
-        else return '/admin'
-        // Default admin (super-admin)
-        return '/admin';
-      case 'judge':
-        return '/judges';
-      case 'lawyer':
-        return '/lawyers';
-      case 'public':
-        return '/public';
-      case 'law-firm-admin':
-        // Legacy support - in case role is still set as law-firm-admin
-        return '/lawfirm';
-      case 'court-admin':
-        // Legacy support - in case role is still set as court-admin
-        return '/judge-admin';
-      default:
-        return '/';
-    }
-  };
-
+const getDashboardPath = (role: UserRole, adminType?: string): string => {
+  console.log('DEBUG - getDashboardPath called with:', { role, adminType });
+  
+  switch (role) {
+    case 'admin':
+      // Default admin (super-admin) - FIXED: removed the else that was breaking the logic
+      console.log('DEBUG - Redirecting admin to /admin');
+      return '/admin';
+      
+    case 'judge':
+      console.log('DEBUG - Redirecting judge to /judges');
+      return '/judges';
+      
+    case 'lawyer':
+      console.log('DEBUG - Redirecting lawyer to /lawyers');
+      return '/lawyers';
+      
+    case 'public':
+      console.log('DEBUG - Redirecting public to /public');
+      return '/public';
+      
+    case 'law-firm-admin':
+      // Legacy support - in case role is still set as law-firm-admin
+      console.log('DEBUG - Redirecting legacy law-firm-admin to /lawfirm');
+      return '/lawfirm';
+      
+    case 'court-admin':
+    case 'supreme-court':
+    case 'constitutional-court':
+    case 'high-court':
+    case 'subordinate-magistrate':
+    case 'local-courts':
+    case 'specialized-tribunals':
+    case 'small-claims':
+      // Legacy support - in case role is still set as court-admin
+      console.log('DEBUG - Redirecting court role to /courts');
+      return '/courts';
+      
+    default:
+      console.log('DEBUG - Unknown role, redirecting to /');
+      return '/';
+  }
+};
   const getRoleBadgeColor = (role: UserRole) => {
     switch (role) {
       case 'admin':

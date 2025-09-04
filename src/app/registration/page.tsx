@@ -422,7 +422,7 @@ const handleTabChange = (value: string) => {
         {errors.password && (
           <div className="flex items-center gap-1 mt-1 text-red-500 text-sm">
             <AlertCircle className="h-3 w-3" />
-            {errors.password}
+            {errors.password} 
           </div>
         )}
       </div>

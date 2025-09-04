@@ -32,189 +32,253 @@ export interface CaseImpactAnalysis {
     deadline?: string;
 }
 
+// Mock Data
+const MOCK_LEGISLATIVE_UPDATES: LegislativeUpdate[] = [
+    {
+        id: 'bill_2024_001',
+        billNumber: 'HB 2024/001',
+        title: 'Criminal Procedure (Amendment) Act 2024',
+        status: 'passed',
+        summary: 'Amendment to criminal procedure laws introducing new evidence handling requirements and witness protection measures.',
+        affectedLaws: ['Criminal Procedure Code', 'Evidence Act', 'Witness Protection Act'],
+        impactLevel: 'high',
+        effectiveDate: '2024-12-01',
+        category: 'criminal',
+        fullText: 'Full text of the Criminal Procedure Amendment Act...',
+        amendments: [
+            'New requirements for digital evidence handling',
+            'Enhanced witness protection protocols',
+            'Mandatory recording of interrogations'
+        ],
+        timestamp: '2024-11-15T10:00:00Z',
+        source: 'parliament'
+    },
+    {
+        id: 'bill_2024_002',
+        billNumber: 'HB 2024/002',
+        title: 'Civil Procedure (Electronic Filing) Act 2024',
+        status: 'assented',
+        summary: 'Introduction of mandatory electronic filing system for all civil court proceedings.',
+        affectedLaws: ['Civil Procedure Code', 'Court Rules'],
+        impactLevel: 'critical',
+        effectiveDate: '2025-01-01',
+        category: 'civil',
+        amendments: [
+            'Mandatory e-filing for all civil cases',
+            'New digital signature requirements',
+            'Electronic service of process'
+        ],
+        timestamp: '2024-11-10T14:30:00Z',
+        source: 'parliament'
+    },
+    {
+        id: 'bill_2024_003',
+        billNumber: 'HB 2024/003',
+        title: 'Commercial Courts (Jurisdiction) Amendment 2024',
+        status: 'third_reading',
+        summary: 'Expansion of commercial court jurisdiction to include intellectual property disputes.',
+        affectedLaws: ['Commercial Courts Act', 'Intellectual Property Act'],
+        impactLevel: 'medium',
+        effectiveDate: '2024-12-15',
+        category: 'commercial',
+        timestamp: '2024-11-05T09:15:00Z',
+        source: 'parliament'
+    },
+    {
+        id: 'reg_2024_001',
+        billNumber: 'SI 2024/45',
+        title: 'Court Fees (Amendment) Regulations 2024',
+        status: 'introduced',
+        summary: 'Revision of court filing fees and service charges across all court levels.',
+        affectedLaws: ['Court Fees Act'],
+        impactLevel: 'medium',
+        effectiveDate: '2025-02-01',
+        category: 'administrative',
+        timestamp: '2024-10-28T16:45:00Z',
+        source: 'gazette'
+    },
+    {
+        id: 'bill_2024_004',
+        billNumber: 'HB 2024/004',
+        title: 'Judicial Service (Performance) Amendment 2024',
+        status: 'committee',
+        summary: 'New performance evaluation criteria for judicial officers and court staff.',
+        affectedLaws: ['Judicial Service Act'],
+        impactLevel: 'low',
+        effectiveDate: '2025-03-01',
+        category: 'administrative',
+        timestamp: '2024-10-20T11:00:00Z',
+        source: 'ministry'
+    },
+    {
+        id: 'bill_2024_005',
+        billNumber: 'CB 2024/12',
+        title: 'Constitution (Fundamental Rights) Amendment 2024',
+        status: 'second_reading',
+        summary: 'Amendment to strengthen fundamental rights provisions and judicial review powers.',
+        affectedLaws: ['Constitution of Zambia', 'Bill of Rights'],
+        impactLevel: 'critical',
+        effectiveDate: '2025-06-01',
+        category: 'constitutional',
+        amendments: [
+            'Enhanced right to fair trial provisions',
+            'Expanded judicial review powers',
+            'New rights for digital privacy'
+        ],
+        timestamp: '2024-10-15T13:20:00Z',
+        source: 'parliament'
+    }
+];
+
+const MOCK_CASE_IMPACTS: CaseImpactAnalysis[] = [
+    {
+        caseId: 'case_001',
+        updateId: 'bill_2024_001',
+        impactType: 'procedural',
+        severity: 'significant',
+        requiredActions: [
+            'Update evidence handling procedures',
+            'Train staff on new witness protection protocols',
+            'Implement mandatory recording system'
+        ],
+        recommendations: [
+            'Schedule urgent training session',
+            'Audit current evidence storage',
+            'Update case management procedures'
+        ],
+        deadline: '2024-11-30T23:59:59Z'
+    },
+    {
+        caseId: 'case_002',
+        updateId: 'bill_2024_002',
+        impactType: 'procedural',
+        severity: 'critical',
+        requiredActions: [
+            'Migrate all filings to electronic system',
+            'Obtain digital signatures for all parties',
+            'Update service procedures'
+        ],
+        recommendations: [
+            'Immediate system training required',
+            'Test all electronic filing procedures',
+            'Notify all parties of new requirements'
+        ],
+        deadline: '2024-12-15T23:59:59Z'
+    }
+];
+
 class ParliamentIntegrationService {
-    private webhookEndpoint = '/api/parliament/webhook';
-    private parliamentApiUrl = process.env.PARLIAMENT_API_URL || 'https://api.parliament.zm';
-    private apiKey = process.env.PARLIAMENT_API_KEY || '';
-    private isConnected = false;
+    private isConnected = true; // Mock as always connected
+    private mockUpdates: LegislativeUpdate[] = [...MOCK_LEGISLATIVE_UPDATES];
+    private mockImpacts: CaseImpactAnalysis[] = [...MOCK_CASE_IMPACTS];
 
     constructor() {
         this.initializeConnection();
     }
 
     /**
-     * Initialize connection to Parliament API
+     * Mock initialization - always succeeds
      */
     async initializeConnection(): Promise<boolean> {
-        try {
-            // Test connection to Parliament API
-            const response = await fetch(`${this.parliamentApiUrl}/health`, {
-                headers: {
-                    'Authorization': `Bearer ${this.apiKey}`,
-                    'Content-Type': 'application/json'
-                }
-            });
+        // Simulate API delay
+        await new Promise(resolve => setTimeout(resolve, 500));
 
-            this.isConnected = response.ok;
+        console.log('Mock Parliament API connection established');
+        this.isConnected = true;
 
-            if (this.isConnected) {
-                console.log('Parliament API connection established');
-                await this.setupWebhooks();
-                await this.syncInitialData();
-            }
+        // Simulate initial data sync
+        await this.syncInitialData();
 
-            return this.isConnected;
-        } catch (error) {
-            console.error('Failed to connect to Parliament API:', error);
-            this.isConnected = false;
-            return false;
-        }
+        return true;
     }
 
     /**
-     * Setup webhooks for real-time updates
-     */
-    private async setupWebhooks(): Promise<void> {
-        try {
-            const webhookConfig = {
-                url: `${window.location.origin}${this.webhookEndpoint}`,
-                events: [
-                    'bill.introduced',
-                    'bill.amended',
-                    'bill.passed',
-                    'bill.assented',
-                    'act.gazetted',
-                    'regulation.published'
-                ],
-                secret: process.env.WEBHOOK_SECRET
-            };
-
-            await fetch(`${this.parliamentApiUrl}/webhooks`, {
-                method: 'POST',
-                headers: {
-                    'Authorization': `Bearer ${this.apiKey}`,
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify(webhookConfig)
-            });
-
-            console.log('Parliament webhooks configured successfully');
-        } catch (error) {
-            console.error('Failed to setup parliament webhooks:', error);
-        }
-    }
-
-    /**
-     * Sync initial legislative data
+     * Mock sync of initial data
      */
     private async syncInitialData(): Promise<void> {
         try {
-            // Fetch recent bills and acts
-            const [bills, acts, regulations] = await Promise.all([
-                this.fetchRecentBills(),
-                this.fetchRecentActs(),
-                this.fetchRecentRegulations()
-            ]);
-
-            // Store in Firebase
-            const allUpdates = [...bills, ...acts, ...regulations];
-            for (const update of allUpdates) {
+            // Store mock data in Firebase
+            for (const update of this.mockUpdates) {
                 await uploadData('legislative_updates', update);
             }
 
-            console.log(`Synced ${allUpdates.length} legislative updates`);
+            for (const impact of this.mockImpacts) {
+                await uploadData('case_impact_analyses', impact);
+            }
+
+            console.log(`Synced ${this.mockUpdates.length} mock legislative updates`);
         } catch (error) {
-            console.error('Failed to sync initial legislative data:', error);
+            console.error('Failed to sync mock legislative data:', error);
         }
     }
 
     /**
-     * Fetch recent bills from Parliament API
+     * Mock fetch recent bills
      */
     async fetchRecentBills(): Promise<LegislativeUpdate[]> {
-        try {
-            const response = await fetch(`${this.parliamentApiUrl}/bills/recent`, {
-                headers: {
-                    'Authorization': `Bearer ${this.apiKey}`,
-                    'Content-Type': 'application/json'
-                }
-            });
+        // Simulate API delay
+        await new Promise(resolve => setTimeout(resolve, 300));
 
-            const bills = await response.json();
-
-            return bills.map((bill: any) => ({
-                id: `bill_${bill.id}`,
-                billNumber: bill.number,
-                title: bill.title,
-                status: bill.status,
-                summary: bill.summary,
-                affectedLaws: bill.affected_laws || [],
-                impactLevel: this.assessImpactLevel(bill),
-                effectiveDate: bill.effective_date,
-                category: this.categorizeUpdate(bill),
-                fullText: bill.full_text,
-                amendments: bill.amendments || [],
-                timestamp: new Date().toISOString(),
-                source: 'parliament'
-            }));
-        } catch (error) {
-            console.error('Failed to fetch recent bills:', error);
-            return [];
-        }
+        return this.mockUpdates.filter(update =>
+            update.id.startsWith('bill_') || update.id.startsWith('cb_')
+        );
     }
 
     /**
-     * Fetch recent acts
+     * Mock fetch recent acts
      */
     async fetchRecentActs(): Promise<LegislativeUpdate[]> {
-        // Similar implementation for acts
-        return [];
+        await new Promise(resolve => setTimeout(resolve, 300));
+
+        return this.mockUpdates.filter(update =>
+            update.status === 'passed' || update.status === 'assented'
+        );
     }
 
     /**
-     * Fetch recent regulations
+     * Mock fetch recent regulations
      */
     async fetchRecentRegulations(): Promise<LegislativeUpdate[]> {
-        // Similar implementation for regulations
-        return [];
+        await new Promise(resolve => setTimeout(resolve, 300));
+
+        return this.mockUpdates.filter(update =>
+            update.id.startsWith('reg_') && update.source === 'gazette'
+        );
     }
 
     /**
-     * Process incoming webhook from Parliament
+     * Mock webhook processing
      */
     async processWebhook(payload: any): Promise<void> {
-        try {
-            const update: LegislativeUpdate = {
-                id: `${payload.type}_${payload.id}`,
-                billNumber: payload.bill_number || payload.act_number,
-                title: payload.title,
-                status: payload.status,
-                summary: payload.summary,
-                affectedLaws: payload.affected_laws || [],
-                impactLevel: this.assessImpactLevel(payload),
-                effectiveDate: payload.effective_date,
-                category: this.categorizeUpdate(payload),
-                timestamp: new Date().toISOString(),
-                source: 'parliament'
-            };
+        // Simulate processing a new update
+        const newUpdate: LegislativeUpdate = {
+            id: `mock_${Date.now()}`,
+            billNumber: payload.bill_number || `MB ${new Date().getFullYear()}/${Math.floor(Math.random() * 100)}`,
+            title: payload.title || 'Mock Legislative Update',
+            status: payload.status || 'introduced',
+            summary: payload.summary || 'This is a mock legislative update for testing purposes.',
+            affectedLaws: payload.affected_laws || ['Mock Law Act'],
+            impactLevel: this.assessImpactLevel(payload),
+            effectiveDate: payload.effective_date || new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
+            category: this.categorizeUpdate(payload),
+            timestamp: new Date().toISOString(),
+            source: 'parliament'
+        };
 
-            // Store the update
-            await uploadData('legislative_updates', update);
+        // Add to mock data
+        this.mockUpdates.unshift(newUpdate);
 
-            // Analyze impact on existing cases
-            await this.analyzeImpactOnCases(update);
+        // Store the update
+        await uploadData('legislative_updates', newUpdate);
 
-            // Notify relevant users
-            await this.notifyUsers(update);
+        // Analyze impact on existing cases
+        await this.analyzeImpactOnCases(newUpdate);
 
-            console.log(`Processed legislative update: ${update.title}`);
-        } catch (error) {
-            console.error('Failed to process parliament webhook:', error);
-        }
+        console.log(`Processed mock legislative update: ${newUpdate.title}`);
     }
 
     /**
-     * Analyze impact of legislative update on existing cases
+     * Mock case impact analysis
      */
     async analyzeImpactOnCases(update: LegislativeUpdate): Promise<CaseImpactAnalysis[]> {
         try {
@@ -222,11 +286,14 @@ class ParliamentIntegrationService {
             const cases = await getAll('cases');
             const impactAnalyses: CaseImpactAnalysis[] = [];
 
-            for (const caseData of cases) {
+            // Simulate analysis for first few cases
+            const casesToAnalyze = cases.slice(0, 3);
+
+            for (const caseData of casesToAnalyze) {
                 const impact = await this.assessCaseImpact(caseData, update);
                 if (impact) {
                     impactAnalyses.push(impact);
-                    // Store impact analysis
+                    this.mockImpacts.push(impact);
                     await uploadData('case_impact_analyses', impact);
                 }
             }
@@ -245,14 +312,16 @@ class ParliamentIntegrationService {
         caseData: any,
         update: LegislativeUpdate
     ): Promise<CaseImpactAnalysis | null> {
-        // AI-powered impact analysis logic
-        const relevanceScore = this.calculateRelevanceScore(caseData, update);
+        // Mock relevance calculation
+        const relevanceScore = Math.random() * 0.8 + 0.2; // Random score between 0.2-1.0
 
         if (relevanceScore < 0.3) {
-            return null; // Not relevant enough
+            return null;
         }
 
-        const impactType = this.determineImpactType(caseData, update);
+        const impactTypes: CaseImpactAnalysis['impactType'][] = ['procedural', 'substantive', 'evidential', 'jurisdictional'];
+        const impactType = impactTypes[Math.floor(Math.random() * impactTypes.length)];
+
         const severity = this.determineSeverity(relevanceScore, update.impactLevel);
         const requiredActions = this.generateRequiredActions(caseData, update, impactType);
         const recommendations = this.generateRecommendations(caseData, update);
@@ -266,65 +335,6 @@ class ParliamentIntegrationService {
             recommendations,
             deadline: this.calculateDeadline(update, severity)
         };
-    }
-
-    /**
-     * Calculate relevance score between case and update
-     */
-    private calculateRelevanceScore(caseData: any, update: LegislativeUpdate): number {
-        let score = 0;
-
-        // Category match
-        if (caseData.category === update.category) {
-            score += 0.4;
-        }
-
-        // Keywords in case title/description
-        const caseText = `${caseData.title} ${caseData.description}`.toLowerCase();
-        const updateText = `${update.title} ${update.summary}`.toLowerCase();
-
-        const commonKeywords = this.findCommonKeywords(caseText, updateText);
-        score += Math.min(commonKeywords.length * 0.1, 0.3);
-
-        // Affected laws overlap
-        if (caseData.applicable_laws && update.affectedLaws) {
-            const overlap = caseData.applicable_laws.filter((law: string) =>
-                update.affectedLaws.includes(law)
-            ).length;
-            score += Math.min(overlap * 0.2, 0.3);
-        }
-
-        return Math.min(score, 1.0);
-    }
-
-    /**
-     * Find common keywords between texts
-     */
-    private findCommonKeywords(text1: string, text2: string): string[] {
-        const keywords1 = text1.split(/\s+/).filter(word => word.length > 4);
-        const keywords2 = text2.split(/\s+/).filter(word => word.length > 4);
-
-        return keywords1.filter(keyword => keywords2.includes(keyword));
-    }
-
-    /**
-     * Determine impact type
-     */
-    private determineImpactType(
-        caseData: any,
-        update: LegislativeUpdate
-    ): CaseImpactAnalysis['impactType'] {
-        // Logic to determine if impact is procedural, substantive, etc.
-        if (update.title.toLowerCase().includes('procedure')) {
-            return 'procedural';
-        }
-        if (update.title.toLowerCase().includes('evidence')) {
-            return 'evidential';
-        }
-        if (update.title.toLowerCase().includes('jurisdiction')) {
-            return 'jurisdictional';
-        }
-        return 'substantive';
     }
 
     /**
@@ -376,7 +386,6 @@ class ParliamentIntegrationService {
                 break;
         }
 
-        // Add common actions
         actions.push('Notify all parties of legislative change');
         actions.push('Update case documentation');
 
@@ -409,7 +418,6 @@ class ParliamentIntegrationService {
         const effectiveDate = new Date(update.effectiveDate);
         const now = new Date();
 
-        // Calculate days until effective date
         const daysUntilEffective = Math.floor(
             (effectiveDate.getTime() - now.getTime()) / (1000 * 60 * 60 * 24)
         );
@@ -430,7 +438,7 @@ class ParliamentIntegrationService {
         }
 
         const deadline = new Date();
-        deadline.setDate(deadline.getDate() + deadlineDays);
+        deadline.setDate(deadline.getDate() + Math.max(1, deadlineDays));
 
         return deadline.toISOString();
     }
@@ -439,9 +447,8 @@ class ParliamentIntegrationService {
      * Assess impact level of legislative update
      */
     private assessImpactLevel(update: any): LegislativeUpdate['impactLevel'] {
-        // Logic to assess impact level based on update content
-        const title = update.title.toLowerCase();
-        const summary = update.summary?.toLowerCase() || '';
+        const title = (update.title || '').toLowerCase();
+        const summary = (update.summary || '').toLowerCase();
 
         const criticalKeywords = ['constitution', 'fundamental', 'major reform'];
         const highKeywords = ['procedure', 'evidence', 'jurisdiction', 'penalty'];
@@ -469,7 +476,7 @@ class ParliamentIntegrationService {
      * Categorize legislative update
      */
     private categorizeUpdate(update: any): LegislativeUpdate['category'] {
-        const title = update.title.toLowerCase();
+        const title = (update.title || '').toLowerCase();
 
         if (title.includes('criminal') || title.includes('penal')) {
             return 'criminal';
@@ -488,30 +495,33 @@ class ParliamentIntegrationService {
     }
 
     /**
-     * Notify relevant users of legislative update
+     * Mock user notifications
      */
     private async notifyUsers(update: LegislativeUpdate): Promise<void> {
         try {
-            // Get users who should be notified based on their roles and case assignments
             const users = await getAll('users');
             const notifications: any[] = [];
 
-            for (const user of users) {
-                if (this.shouldNotifyUser(user, update)) {
-                    notifications.push({
-                        userId: user.id,
-                        type: 'legislative_update',
-                        title: `New Legislative Update: ${update.title}`,
-                        message: `A new ${update.category} law update may affect your cases. Impact level: ${update.impactLevel}`,
-                        data: {
-                            updateId: update.id,
-                            category: update.category,
-                            impactLevel: update.impactLevel
-                        },
-                        timestamp: new Date().toISOString(),
-                        read: false
-                    });
-                }
+            // Mock notification for relevant users
+            const relevantUsers = users.filter((user: any) =>
+                this.shouldNotifyUser(user, update)
+            ).slice(0, 5); // Limit to 5 users for demo
+
+            for (const user of relevantUsers) {
+                notifications.push({
+                    id: `notif_${Date.now()}_${user.id}`,
+                    userId: user.id,
+                    type: 'legislative_update',
+                    title: `New Legislative Update: ${update.title}`,
+                    message: `A new ${update.category} law update may affect your cases. Impact level: ${update.impactLevel}`,
+                    data: {
+                        updateId: update.id,
+                        category: update.category,
+                        impactLevel: update.impactLevel
+                    },
+                    timestamp: new Date().toISOString(),
+                    read: false
+                });
             }
 
             // Store notifications
@@ -519,7 +529,7 @@ class ParliamentIntegrationService {
                 await uploadData('notifications', notification);
             }
 
-            console.log(`Sent ${notifications.length} legislative update notifications`);
+            console.log(`Sent ${notifications.length} mock legislative update notifications`);
         } catch (error) {
             console.error('Failed to notify users:', error);
         }
@@ -529,17 +539,37 @@ class ParliamentIntegrationService {
      * Determine if user should be notified
      */
     private shouldNotifyUser(user: any, update: LegislativeUpdate): boolean {
-        // Notify all judges and admins
         if (['judge', 'admin'].includes(user.role)) {
             return true;
         }
 
-        // Notify lawyers with relevant cases
         if (user.role === 'lawyer' && user.specializations) {
             return user.specializations.includes(update.category);
         }
 
         return false;
+    }
+
+    /**
+     * Add new mock update (for testing)
+     */
+    addMockUpdate(updateData: Partial<LegislativeUpdate>): void {
+        const newUpdate: LegislativeUpdate = {
+            id: `mock_${Date.now()}`,
+            billNumber: updateData.billNumber || `MB ${new Date().getFullYear()}/${Math.floor(Math.random() * 100)}`,
+            title: updateData.title || 'New Mock Legislative Update',
+            status: updateData.status || 'introduced',
+            summary: updateData.summary || 'This is a new mock legislative update.',
+            affectedLaws: updateData.affectedLaws || ['Mock Law'],
+            impactLevel: updateData.impactLevel || 'medium',
+            effectiveDate: updateData.effectiveDate || new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
+            category: updateData.category || 'administrative',
+            timestamp: new Date().toISOString(),
+            source: updateData.source || 'parliament',
+            ...updateData
+        };
+
+        this.mockUpdates.unshift(newUpdate);
     }
 
     /**
@@ -554,13 +584,21 @@ class ParliamentIntegrationService {
      */
     async getRecentUpdates(limit: number = 10): Promise<LegislativeUpdate[]> {
         try {
-            const updates = await getAll('legislative_updates');
-            return updates
+            // Try to get from Firebase first, fall back to mock data
+            const storedUpdates = await getAll('legislative_updates');
+            if (storedUpdates.length > 0) {
+                return storedUpdates
+                    .sort((a: any, b: any) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime())
+                    .slice(0, limit) as LegislativeUpdate[];
+            }
+
+            // Return mock data if nothing in Firebase
+            return this.mockUpdates
                 .sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime())
-                .slice(0, limit) as LegislativeUpdate[];
+                .slice(0, limit);
         } catch (error) {
-            console.error('Failed to get recent updates:', error);
-            return [];
+            console.error('Failed to get recent updates, using mock data:', error);
+            return this.mockUpdates.slice(0, limit);
         }
     }
 
@@ -569,14 +607,20 @@ class ParliamentIntegrationService {
      */
     async getCaseImpacts(caseId?: string): Promise<CaseImpactAnalysis[]> {
         try {
+            const storedImpacts = await getAll('case_impact_analyses');
+            let impacts = storedImpacts.length > 0 ? storedImpacts : this.mockImpacts;
+
             if (caseId) {
-                return await getAll('case_impact_analyses')
-                    .then(analyses => analyses.filter(a => a.caseId === caseId)) as CaseImpactAnalysis[];
+                impacts = impacts.filter((a: any) => a.caseId === caseId);
             }
-            return await getAll('case_impact_analyses') as CaseImpactAnalysis[];
+
+            return impacts as CaseImpactAnalysis[];
         } catch (error) {
-            console.error('Failed to get case impacts:', error);
-            return [];
+            console.error('Failed to get case impacts, using mock data:', error);
+            const impacts = caseId
+                ? this.mockImpacts.filter(a => a.caseId === caseId)
+                : this.mockImpacts;
+            return impacts;
         }
     }
 }
@@ -585,46 +629,22 @@ class ParliamentIntegrationService {
 export const parliamentService = new ParliamentIntegrationService();
 
 /**
- * API Route Handler for Parliament Webhooks
- * Place this in: src/app/api/parliament/webhook/route.ts
+ * Mock API Route Handler for Parliament Webhooks
  */
 export async function POST(request: Request) {
     try {
         const payload = await request.json();
 
-        // Verify webhook signature
-        const signature = request.headers.get('x-parliament-signature');
-        if (!verifyWebhookSignature(payload, signature)) {
-            return new Response('Unauthorized', { status: 401 });
-        }
+        console.log('Mock webhook received:', payload);
 
-        // Process the webhook
+        // Mock processing without signature verification
         await parliamentService.processWebhook(payload);
 
         return new Response('OK', { status: 200 });
     } catch (error) {
-        console.error('Parliament webhook error:', error);
+        console.error('Mock parliament webhook error:', error);
         return new Response('Internal Server Error', { status: 500 });
     }
-}
-
-/**
- * Verify webhook signature for security
- */
-function verifyWebhookSignature(payload: any, signature: string | null): boolean {
-    if (!signature || !process.env.WEBHOOK_SECRET) {
-        return false;
-    }
-
-    // Implementation would verify HMAC signature
-    // This is a simplified version
-    const crypto = require('crypto');
-    const expectedSignature = crypto
-        .createHmac('sha256', process.env.WEBHOOK_SECRET)
-        .update(JSON.stringify(payload))
-        .digest('hex');
-
-    return signature === `sha256=${expectedSignature}`;
 }
 
 /**
@@ -666,9 +686,9 @@ export function useParliamentUpdates() {
         const loadUpdates = async () => {
             try {
                 setLoading(true);
+                setError(null);
                 const recentUpdates = await parliamentService.getRecentUpdates(20);
                 setUpdates(recentUpdates);
-                setError(null);
             } catch (err) {
                 setError('Failed to load parliamentary updates');
                 console.error(err);
@@ -679,25 +699,70 @@ export function useParliamentUpdates() {
 
         loadUpdates();
 
-        // Set up real-time updates if WebSocket is available
-        const interval = setInterval(loadUpdates, 60000); // Check every minute
+        // Simulate real-time updates every 30 seconds for demo
+        const interval = setInterval(() => {
+            // Randomly add a new mock update
+            if (Math.random() > 0.7) {
+                const mockTitles = [
+                    'Court Technology Enhancement Act',
+                    'Legal Aid Expansion Bill',
+                    'Judicial Ethics Amendment',
+                    'Electronic Evidence Procedures Act',
+                    'Alternative Dispute Resolution Bill'
+                ];
+
+                parliamentService.addMockUpdate({
+                    title: mockTitles[Math.floor(Math.random() * mockTitles.length)],
+                    summary: 'Newly introduced mock legislation for demonstration purposes.',
+                    impactLevel: ['low', 'medium', 'high'][Math.floor(Math.random() * 3)] as any,
+                    category: ['administrative', 'civil', 'criminal'][Math.floor(Math.random() * 3)] as any
+                });
+
+                loadUpdates();
+            }
+        }, 30000);
 
         return () => clearInterval(interval);
     }, []);
 
-    return { updates, loading, error, refresh: () => window.location.reload() };
+    const refresh = () => {
+        const loadUpdates = async () => {
+            try {
+                setLoading(true);
+                setError(null);
+                const recentUpdates = await parliamentService.getRecentUpdates(20);
+                setUpdates(recentUpdates);
+            } catch (err) {
+                setError('Failed to load parliamentary updates');
+                console.error(err);
+            } finally {
+                setLoading(false);
+            }
+        };
+        loadUpdates();
+    };
+
+    return { updates, loading, error, refresh };
 }
 
 /**
  * Parliament Dashboard Component
- * This can be used in the admin dashboard
  */
 export function ParliamentDashboard() {
-    const { updates, loading, error } = useParliamentUpdates();
+    const { updates, loading, error, refresh } = useParliamentUpdates();
     const [selectedUpdate, setSelectedUpdate] = useState<LegislativeUpdate | null>(null);
 
     if (loading) {
-        return <div className="animate-pulse">Loading parliamentary updates...</div>;
+        return (
+            <div className="animate-pulse space-y-4">
+                <div className="h-6 bg-gray-200 rounded w-1/3"></div>
+                <div className="space-y-3">
+                    {[1, 2, 3].map(i => (
+                        <div key={i} className="h-24 bg-gray-200 rounded"></div>
+                    ))}
+                </div>
+            </div>
+        );
     }
 
     if (error) {
@@ -705,7 +770,7 @@ export function ParliamentDashboard() {
             <div className="bg-red-50 border border-red-200 rounded-lg p-4">
                 <p className="text-red-800">{error}</p>
                 <button
-                    onClick={() => window.location.reload()}
+                    onClick={refresh}
                     className="mt-2 px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700"
                 >
                     Retry
@@ -718,9 +783,17 @@ export function ParliamentDashboard() {
         <div className="space-y-4">
             <div className="flex items-center justify-between">
                 <h3 className="text-lg font-semibold">Parliamentary Updates</h3>
-                <div className="flex items-center space-x-2">
-                    <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
-                    <span className="text-sm text-green-600">Live Updates</span>
+                <div className="flex items-center space-x-4">
+                    <button
+                        onClick={refresh}
+                        className="px-3 py-1 text-sm bg-blue-600 text-white rounded hover:bg-blue-700"
+                    >
+                        Refresh
+                    </button>
+                    <div className="flex items-center space-x-2">
+                        <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
+                        <span className="text-sm text-green-600">Mock Data Active</span>
+                    </div>
                 </div>
             </div>
 
@@ -733,8 +806,8 @@ export function ParliamentDashboard() {
                     >
                         <div className="flex items-start justify-between">
                             <div className="flex-1">
-                                <h4 className="font-medium text-zambia-black">{update.title}</h4>
-                                <p className="text-sm text-gray-600 mt-1">{update.summary}</p>
+                                <h4 className="font-medium text-gray-900">{update.title}</h4>
+                                <p className="text-sm text-gray-600 mt-1 line-clamp-2">{update.summary}</p>
                                 <div className="flex items-center space-x-4 mt-2">
                                     <span className={`px-2 py-1 rounded text-xs font-medium ${update.impactLevel === 'critical' ? 'bg-red-100 text-red-800' :
                                             update.impactLevel === 'high' ? 'bg-orange-100 text-orange-800' :
@@ -743,12 +816,15 @@ export function ParliamentDashboard() {
                                         }`}>
                                         {update.impactLevel} impact
                                     </span>
-                                    <span className="text-xs text-gray-500">
-                                        {update.category} • {update.status}
+                                    <span className="text-xs text-gray-500 capitalize">
+                                        {update.category} • {update.status.replace('_', ' ')}
+                                    </span>
+                                    <span className="text-xs text-blue-600">
+                                        {update.source}
                                     </span>
                                 </div>
                             </div>
-                            <div className="text-xs text-gray-400">
+                            <div className="text-xs text-gray-400 ml-4">
                                 {new Date(update.timestamp).toLocaleDateString()}
                             </div>
                         </div>
@@ -758,56 +834,82 @@ export function ParliamentDashboard() {
 
             {updates.length === 0 && (
                 <div className="text-center py-8 text-gray-500">
-                    No parliamentary updates available
+                    <p>No parliamentary updates available</p>
+                    <button
+                        onClick={refresh}
+                        className="mt-2 px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
+                    >
+                        Load Updates
+                    </button>
                 </div>
             )}
 
             {/* Update Detail Modal */}
             {selectedUpdate && (
-                <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-                    <div className="bg-white rounded-lg max-w-2xl max-h-[80vh] overflow-y-auto">
+                <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+                    <div className="bg-white rounded-lg max-w-2xl w-full max-h-[80vh] overflow-y-auto">
                         <div className="p-6">
                             <div className="flex items-start justify-between mb-4">
-                                <h3 className="text-xl font-semibold">{selectedUpdate.title}</h3>
+                                <div className="flex-1 pr-4">
+                                    <h3 className="text-xl font-semibold text-gray-900">{selectedUpdate.title}</h3>
+                                    <p className="text-sm text-gray-600 mt-1">{selectedUpdate.billNumber}</p>
+                                </div>
                                 <button
                                     onClick={() => setSelectedUpdate(null)}
-                                    className="text-gray-400 hover:text-gray-600"
+                                    className="text-gray-400 hover:text-gray-600 p-1"
                                 >
                                     <X className="h-6 w-6" />
                                 </button>
                             </div>
 
                             <div className="space-y-4">
-                                <div className="grid grid-cols-2 gap-4 text-sm">
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
                                     <div>
-                                        <span className="font-medium">Bill Number:</span>
-                                        <p>{selectedUpdate.billNumber}</p>
+                                        <span className="font-medium text-gray-700">Bill Number:</span>
+                                        <p className="text-gray-900">{selectedUpdate.billNumber}</p>
                                     </div>
                                     <div>
-                                        <span className="font-medium">Status:</span>
-                                        <p className="capitalize">{selectedUpdate.status.replace('_', ' ')}</p>
+                                        <span className="font-medium text-gray-700">Status:</span>
+                                        <p className="capitalize text-gray-900">{selectedUpdate.status.replace('_', ' ')}</p>
                                     </div>
                                     <div>
-                                        <span className="font-medium">Category:</span>
-                                        <p className="capitalize">{selectedUpdate.category}</p>
+                                        <span className="font-medium text-gray-700">Category:</span>
+                                        <p className="capitalize text-gray-900">{selectedUpdate.category}</p>
                                     </div>
                                     <div>
-                                        <span className="font-medium">Effective Date:</span>
-                                        <p>{new Date(selectedUpdate.effectiveDate).toLocaleDateString()}</p>
+                                        <span className="font-medium text-gray-700">Impact Level:</span>
+                                        <span className={`px-2 py-1 rounded text-xs font-medium ml-1 ${selectedUpdate.impactLevel === 'critical' ? 'bg-red-100 text-red-800' :
+                                                selectedUpdate.impactLevel === 'high' ? 'bg-orange-100 text-orange-800' :
+                                                    selectedUpdate.impactLevel === 'medium' ? 'bg-yellow-100 text-yellow-800' :
+                                                        'bg-green-100 text-green-800'
+                                            }`}>
+                                            {selectedUpdate.impactLevel}
+                                        </span>
+                                    </div>
+                                    <div>
+                                        <span className="font-medium text-gray-700">Effective Date:</span>
+                                        <p className="text-gray-900">{new Date(selectedUpdate.effectiveDate).toLocaleDateString()}</p>
+                                    </div>
+                                    <div>
+                                        <span className="font-medium text-gray-700">Source:</span>
+                                        <p className="capitalize text-gray-900">{selectedUpdate.source}</p>
                                     </div>
                                 </div>
 
                                 <div>
-                                    <span className="font-medium">Summary:</span>
-                                    <p className="mt-1 text-gray-700">{selectedUpdate.summary}</p>
+                                    <span className="font-medium text-gray-700">Summary:</span>
+                                    <p className="mt-1 text-gray-900 leading-relaxed">{selectedUpdate.summary}</p>
                                 </div>
 
-                                {selectedUpdate.affectedLaws.length > 0 && (
+                                {selectedUpdate.affectedLaws && selectedUpdate.affectedLaws.length > 0 && (
                                     <div>
-                                        <span className="font-medium">Affected Laws:</span>
-                                        <ul className="mt-1 list-disc list-inside text-gray-700">
+                                        <span className="font-medium text-gray-700">Affected Laws:</span>
+                                        <ul className="mt-1 space-y-1">
                                             {selectedUpdate.affectedLaws.map((law, index) => (
-                                                <li key={index}>{law}</li>
+                                                <li key={index} className="text-gray-900 pl-4 relative">
+                                                    <span className="absolute left-0">•</span>
+                                                    {law}
+                                                </li>
                                             ))}
                                         </ul>
                                     </div>
@@ -815,21 +917,42 @@ export function ParliamentDashboard() {
 
                                 {selectedUpdate.amendments && selectedUpdate.amendments.length > 0 && (
                                     <div>
-                                        <span className="font-medium">Key Amendments:</span>
-                                        <ul className="mt-1 list-disc list-inside text-gray-700">
+                                        <span className="font-medium text-gray-700">Key Amendments:</span>
+                                        <ul className="mt-1 space-y-1">
                                             {selectedUpdate.amendments.map((amendment, index) => (
-                                                <li key={index}>{amendment}</li>
+                                                <li key={index} className="text-gray-900 pl-4 relative">
+                                                    <span className="absolute left-0">•</span>
+                                                    {amendment}
+                                                </li>
                                             ))}
                                         </ul>
                                     </div>
                                 )}
 
-                                <div className="flex space-x-2 pt-4">
-                                    <button className="px-4 py-2 bg-zambia-green text-white rounded hover:bg-zambia-green/90">
+                                <div className="flex flex-wrap gap-2 pt-4 border-t">
+                                    <button
+                                        className="px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700 transition-colors"
+                                        onClick={() => {
+                                            alert('Case impact analysis would be performed here');
+                                        }}
+                                    >
                                         Analyze Impact
                                     </button>
-                                    <button className="px-4 py-2 border border-gray-300 rounded hover:bg-gray-50">
+                                    <button
+                                        className="px-4 py-2 border border-gray-300 text-gray-700 rounded hover:bg-gray-50 transition-colors"
+                                        onClick={() => {
+                                            alert('Full text would be displayed here');
+                                        }}
+                                    >
                                         View Full Text
+                                    </button>
+                                    <button
+                                        className="px-4 py-2 border border-gray-300 text-gray-700 rounded hover:bg-gray-50 transition-colors"
+                                        onClick={() => {
+                                            alert('Notification would be sent to relevant users');
+                                        }}
+                                    >
+                                        Notify Team
                                     </button>
                                 </div>
                             </div>
@@ -839,4 +962,139 @@ export function ParliamentDashboard() {
             )}
         </div>
     );
+}
+
+/**
+ * Case Impact Analysis Component
+ */
+export function CaseImpactAnalysis({ caseId }: { caseId?: string }) {
+    const [impacts, setImpacts] = useState<CaseImpactAnalysis[]>([]);
+    const [loading, setLoading] = useState(true);
+    const [error, setError] = useState<string | null>(null);
+
+    useEffect(() => {
+        const loadImpacts = async () => {
+            try {
+                setLoading(true);
+                setError(null);
+                const caseImpacts = await parliamentService.getCaseImpacts(caseId);
+                setImpacts(caseImpacts);
+            } catch (err) {
+                setError('Failed to load case impact analyses');
+                console.error(err);
+            } finally {
+                setLoading(false);
+            }
+        };
+
+        loadImpacts();
+    }, [caseId]);
+
+    if (loading) {
+        return (
+            <div className="animate-pulse space-y-4">
+                <div className="h-6 bg-gray-200 rounded w-1/2"></div>
+                <div className="space-y-3">
+                    {[1, 2].map(i => (
+                        <div key={i} className="h-20 bg-gray-200 rounded"></div>
+                    ))}
+                </div>
+            </div>
+        );
+    }
+
+    if (error) {
+        return (
+            <div className="bg-red-50 border border-red-200 rounded-lg p-4">
+                <p className="text-red-800">{error}</p>
+            </div>
+        );
+    }
+
+    if (impacts.length === 0) {
+        return (
+            <div className="text-center py-8 text-gray-500">
+                <p>No legislative impacts found for this case</p>
+            </div>
+        );
+    }
+
+    return (
+        <div className="space-y-4">
+            <h4 className="text-lg font-semibold">Legislative Impact Analysis</h4>
+
+            {impacts.map((impact, index) => (
+                <div key={index} className="border rounded-lg p-4 bg-white">
+                    <div className="flex items-start justify-between mb-3">
+                        <div>
+                            <h5 className="font-medium text-gray-900">
+                                {impact.impactType.charAt(0).toUpperCase() + impact.impactType.slice(1)} Impact
+                            </h5>
+                            <p className="text-sm text-gray-600">Update ID: {impact.updateId}</p>
+                        </div>
+                        <span className={`px-2 py-1 rounded text-xs font-medium ${impact.severity === 'critical' ? 'bg-red-100 text-red-800' :
+                                impact.severity === 'significant' ? 'bg-orange-100 text-orange-800' :
+                                    impact.severity === 'moderate' ? 'bg-yellow-100 text-yellow-800' :
+                                        'bg-green-100 text-green-800'
+                            }`}>
+                            {impact.severity}
+                        </span>
+                    </div>
+
+                    <div className="grid md:grid-cols-2 gap-4">
+                        <div>
+                            <h6 className="font-medium text-gray-700 mb-2">Required Actions:</h6>
+                            <ul className="space-y-1 text-sm">
+                                {impact.requiredActions.map((action, idx) => (
+                                    <li key={idx} className="text-gray-900 pl-4 relative">
+                                        <span className="absolute left-0 text-red-600">•</span>
+                                        {action}
+                                    </li>
+                                ))}
+                            </ul>
+                        </div>
+
+                        <div>
+                            <h6 className="font-medium text-gray-700 mb-2">Recommendations:</h6>
+                            <ul className="space-y-1 text-sm">
+                                {impact.recommendations.map((rec, idx) => (
+                                    <li key={idx} className="text-gray-900 pl-4 relative">
+                                        <span className="absolute left-0 text-blue-600">•</span>
+                                        {rec}
+                                    </li>
+                                ))}
+                            </ul>
+                        </div>
+                    </div>
+
+                    {impact.deadline && (
+                        <div className="mt-3 pt-3 border-t">
+                            <p className="text-sm text-gray-600">
+                                <span className="font-medium">Deadline:</span> {' '}
+                                <span className="text-red-600 font-medium">
+                                    {new Date(impact.deadline).toLocaleDateString()}
+                                </span>
+                            </p>
+                        </div>
+                    )}
+                </div>
+            ))}
+        </div>
+    );
+}
+
+/**
+ * Utility function to simulate adding a test legislative update
+ */
+export function addTestLegislativeUpdate() {
+    const testUpdate = {
+        title: `Test Legislative Update ${Date.now()}`,
+        summary: 'This is a test update created for demonstration purposes.',
+        category: 'administrative' as const,
+        impactLevel: 'medium' as const,
+        status: 'introduced' as const
+    };
+
+    parliamentService.addMockUpdate(testUpdate);
+    console.log('Test legislative update added:', testUpdate);
 }

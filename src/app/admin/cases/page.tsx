@@ -633,6 +633,405 @@ export default function AdminCases({
 
       {/* Rest of the component remains the same... */}
       {/* Mobile Filter Panel, Case Form Dialog, Case Details Dialog, etc. */}
+
+      {/* Mobile-Optimized Case Form Dialog */}
+      <Dialog open={showCaseDialog} onOpenChange={setShowCaseDialog}>
+        <DialogContent className="w-[95vw] max-w-4xl max-h-[90vh] overflow-y-auto mx-auto">
+          <DialogHeader>
+            <DialogTitle className="text-lg sm:text-xl font-semibold">
+              {isEditing ? `Edit Case${caseForm.id ? ` - ${caseForm.id}` : ''}` : 'Create New Case'}
+            </DialogTitle>
+            <DialogDescription className="text-sm">
+              {isEditing
+                ? 'Update the case information below. All fields marked with * are required.'
+                : 'Register a new case in the system. All fields marked with * are required.'
+              }
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-4 sm:space-y-6">
+            {/* Basic Information */}
+            <div className="space-y-3 sm:space-y-4">
+              <h3 className="text-base sm:text-lg font-medium border-b pb-2">Basic Information</h3>
+
+              <div className="space-y-3 sm:space-y-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="title" className="text-sm">Case Title *</Label>
+                    <Input
+                      id="title"
+                      value={caseForm.title}
+                      onChange={(e) => setCaseForm(prev => ({ ...prev, title: e.target.value }))}
+                      placeholder="e.g., Smith vs. Johnson"
+                      className="w-full text-sm"
+                    />
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="type" className="text-sm">Case Type *</Label>
+                    <Select
+                      value={caseForm.type}
+                      onValueChange={(value: CaseType) => setCaseForm(prev => ({ ...prev, type: value }))}
+                    >
+                      <SelectTrigger className="text-sm">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {Object.entries(CASE_TYPE_LABELS).map(([key, label]) => (
+                          <SelectItem key={key} value={key}>{label}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="priority" className="text-sm">Priority</Label>
+                    <Select
+                      value={caseForm.priority}
+                      onValueChange={(value: CasePriority) => setCaseForm(prev => ({ ...prev, priority: value }))}
+                    >
+                      <SelectTrigger className="text-sm">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="low">Low</SelectItem>
+                        <SelectItem value="medium">Medium</SelectItem>
+                        <SelectItem value="high">High</SelectItem>
+                        <SelectItem value="urgent">Urgent</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="duration" className="text-sm">Estimated Duration (days)</Label>
+                    <Input
+                      id="duration"
+                      type="number"
+                      min="1"
+                      value={caseForm.estimatedDuration || ''}
+                      onChange={(e) => setCaseForm(prev => ({
+                        ...prev,
+                        estimatedDuration: parseInt(e.target.value) || 30
+                      }))}
+                      placeholder="30"
+                      className="text-sm"
+                    />
+                  </div>
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="description" className="text-sm">Case Description *</Label>
+                  <Textarea
+                    id="description"
+                    value={caseForm.description}
+                    onChange={(e) => setCaseForm(prev => ({ ...prev, description: e.target.value }))}
+                    placeholder="Provide a detailed description of the case..."
+                    rows={3}
+                    className="resize-none text-sm"
+                  />
+                </div>
+              </div>
+            </div>
+
+            {/* Case Parties - Mobile Optimized */}
+            <div className="space-y-3 sm:space-y-4">
+              <h3 className="text-base sm:text-lg font-medium border-b pb-2">Case Parties</h3>
+
+              <div className="space-y-4 sm:space-y-6">
+                {/* Mobile: Stacked, Desktop: Side by side */}
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
+                  {/* Plaintiffs */}
+                  <PartyFormSection
+                    parties={caseForm.plaintiffs}
+                    type="plaintiffs"
+                    onAdd={() => addParty('plaintiffs')}
+                    onUpdate={(index, field, value) => updateParty('plaintiffs', index, field, value)}
+                    onRemove={(index) => removeParty('plaintiffs', index)}
+                    label="Plaintiffs"
+                    colorScheme="blue"
+                  />
+
+                  {/* Defendants */}
+                  <PartyFormSection
+                    parties={caseForm.defendants}
+                    type="defendants"
+                    onAdd={() => addParty('defendants')}
+                    onUpdate={(index, field, value) => updateParty('defendants', index, field, value)}
+                    onRemove={(index) => removeParty('defendants', index)}
+                    label="Defendants"
+                    colorScheme="red"
+                  />
+                </div>
+              </div>
+            </div>
+
+            {/* Mobile-Optimized Action Buttons */}
+            <div className="flex flex-col-reverse sm:flex-row justify-end gap-2 sm:gap-3 pt-4 sm:pt-6 border-t">
+              <Button
+                variant="outline"
+                onClick={() => {
+                  setShowCaseDialog(false);
+                  resetForm();
+                }}
+                disabled={submitting}
+                className="w-full sm:w-auto"
+              >
+                Cancel
+              </Button>
+              <Button
+                onClick={handleSubmitCase}
+                disabled={submitting}
+                className={`w-full sm:w-auto ${isEditing ? "bg-orange-600 hover:bg-orange-700" : "bg-green-600 hover:bg-green-700"}`}
+              >
+                {submitting ? (
+                  <>
+                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                    {isEditing ? 'Updating...' : 'Creating...'}
+                  </>
+                ) : (
+                  <>
+                    {isEditing ? (
+                      <>
+                        <Edit2 className="w-4 h-4 mr-2" />
+                        Update Case
+                      </>
+                    ) : (
+                      <>
+                        <Plus className="w-4 h-4 mr-2" />
+                        Create Case
+                      </>
+                    )}
+                  </>
+                )}
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Mobile-Optimized Case Details Dialog */}
+      <Dialog open={showDetailsDialog} onOpenChange={setShowDetailsDialog}>
+        <DialogContent className="w-[95vw] max-w-5xl max-h-[90vh] overflow-y-auto mx-auto">
+          <DialogHeader>
+            <div className="space-y-3 sm:space-y-0 sm:flex sm:items-start sm:justify-between">
+              <div className="min-w-0 flex-1">
+                <DialogTitle className="text-lg sm:text-2xl font-bold flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-3">
+                  <span className="truncate">{selectedCase?.caseNumber}</span>
+                  <div className="flex gap-2 flex-wrap">
+                    <Badge className={selectedCase ? CASE_STATUS_COLORS[selectedCase.status] : ''}>
+                      {selectedCase?.status}
+                    </Badge>
+                    <Badge className={selectedCase ? CASE_PRIORITY_COLORS[selectedCase.priority] : ''}>
+                      {selectedCase?.priority}
+                    </Badge>
+                  </div>
+                </DialogTitle>
+                <DialogDescription className="text-sm sm:text-lg mt-1 line-clamp-2 sm:line-clamp-none">
+                  {selectedCase?.title}
+                </DialogDescription>
+              </div>
+              {mergedConfig.enableCaseEditing && (
+                <Button
+                  onClick={() => selectedCase && handleEditCase(selectedCase)}
+                  className="bg-orange-600 hover:bg-orange-700 w-full sm:w-auto flex-shrink-0"
+                  size="sm"
+                >
+                  <Edit2 className="w-4 h-4 mr-2" />
+                  <span className="sm:inline">Edit</span>
+                </Button>
+              )}
+            </div>
+          </DialogHeader>
+
+          {selectedCase && (
+            <div className="space-y-4 sm:space-y-6">
+              {/* Case Overview - Mobile Stacked */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-6">
+                <Card className="p-3 sm:p-4">
+                  <h4 className="font-semibold mb-2 sm:mb-3 text-blue-700 flex items-center gap-2 text-sm sm:text-base">
+                    <FileText className="w-3 h-3 sm:w-4 sm:h-4" />
+                    Case Information
+                  </h4>
+                  <div className="space-y-1 sm:space-y-2 text-xs sm:text-sm">
+                    <div className="flex justify-between gap-2">
+                      <span className="text-gray-600">Type:</span>
+                      <span className="font-medium text-right">{CASE_TYPE_LABELS[selectedCase.type]}</span>
+                    </div>
+                    <div className="flex justify-between gap-2">
+                      <span className="text-gray-600">Priority:</span>
+                      <span className="font-medium capitalize text-right">{selectedCase.priority}</span>
+                    </div>
+                    <div className="flex justify-between gap-2">
+                      <span className="text-gray-600">Status:</span>
+                      <span className="font-medium capitalize text-right">{selectedCase.status}</span>
+                    </div>
+                    {selectedCase.assignedTo && (
+                      <div className="flex justify-between gap-2">
+                        <span className="text-gray-600">Assigned to:</span>
+                        <span className="font-medium text-right truncate">{selectedCase.assignedTo}</span>
+                      </div>
+                    )}
+                  </div>
+                </Card>
+
+                <Card className="p-3 sm:p-4">
+                  <h4 className="font-semibold mb-2 sm:mb-3 text-green-700 flex items-center gap-2 text-sm sm:text-base">
+                    <Calendar className="w-3 h-3 sm:w-4 sm:h-4" />
+                    Timeline
+                  </h4>
+                  <div className="space-y-1 sm:space-y-2 text-xs sm:text-sm">
+                    <div className="flex justify-between gap-2">
+                      <span className="text-gray-600">Created:</span>
+                      <span className="font-medium text-right">
+                        {new Date(selectedCase.createdAt).toLocaleDateString(undefined, {
+                          month: 'short',
+                          day: 'numeric',
+                          year: '2-digit'
+                        })}
+                      </span>
+                    </div>
+                    <div className="flex justify-between gap-2">
+                      <span className="text-gray-600">Updated:</span>
+                      <span className="font-medium text-right">
+                        {new Date(selectedCase.updatedAt).toLocaleDateString(undefined, {
+                          month: 'short',
+                          day: 'numeric',
+                          year: '2-digit'
+                        })}
+                      </span>
+                    </div>
+                    {selectedCase.estimatedDuration && (
+                      <div className="flex justify-between gap-2">
+                        <span className="text-gray-600">Est. Duration:</span>
+                        <span className="font-medium text-right">{selectedCase.estimatedDuration} days</span>
+                      </div>
+                    )}
+                    {selectedCase.nextHearingDate && (
+                      <div className="flex justify-between gap-2">
+                        <span className="text-gray-600">Next Hearing:</span>
+                        <span className="font-medium text-right">
+                          {new Date(selectedCase.nextHearingDate).toLocaleDateString(undefined, {
+                            month: 'short',
+                            day: 'numeric'
+                          })}
+                        </span>
+                      </div>
+                    )}
+                  </div>
+                </Card>
+
+                <Card className="p-3 sm:p-4 sm:col-span-2 lg:col-span-1">
+                  <h4 className="font-semibold mb-2 sm:mb-3 text-purple-700 flex items-center gap-2 text-sm sm:text-base">
+                    <Gavel className="w-3 h-3 sm:w-4 sm:h-4" />
+                    Case Progress
+                  </h4>
+                  <div className="grid grid-cols-2 sm:grid-cols-1 gap-1 sm:gap-2 text-xs sm:text-sm">
+                    <div className="flex justify-between gap-2">
+                      <span className="text-gray-600">Hearings:</span>
+                      <span className="font-medium">{selectedCase.hearings.length}</span>
+                    </div>
+                    <div className="flex justify-between gap-2">
+                      <span className="text-gray-600">Documents:</span>
+                      <span className="font-medium">{selectedCase.documents.length}</span>
+                    </div>
+                    <div className="flex justify-between gap-2">
+                      <span className="text-gray-600">Rulings:</span>
+                      <span className="font-medium">{selectedCase.rulings.length}</span>
+                    </div>
+                    <div className="flex justify-between gap-2">
+                      <span className="text-gray-600">Lawyers:</span>
+                      <span className="font-medium">{selectedCase.lawyers.length}</span>
+                    </div>
+                  </div>
+                </Card>
+              </div>
+
+              {/* Case Description */}
+              <Card className="p-4 sm:p-6">
+                <h4 className="font-semibold mb-3 text-gray-800 text-sm sm:text-base">Case Description</h4>
+                <p className="text-gray-700 leading-relaxed text-sm sm:text-base">{selectedCase.description}</p>
+              </Card>
+
+              {/* Case Parties - Mobile Stacked */}
+              <div className="space-y-4 sm:space-y-0 sm:grid sm:grid-cols-1 lg:grid-cols-2 sm:gap-6">
+                <Card className="p-4 sm:p-6">
+                  <h4 className="font-semibold mb-3 sm:mb-4 text-blue-700 flex items-center gap-2 text-sm sm:text-base">
+                    <Users className="w-3 h-3 sm:w-4 sm:h-4" />
+                    Plaintiffs ({selectedCase.plaintiffs.length})
+                  </h4>
+                  <div className="space-y-2 sm:space-y-3">
+                    {selectedCase.plaintiffs.map((plaintiff, index) => (
+                      <div key={plaintiff.id} className="bg-blue-50 p-2 sm:p-3 rounded-lg border border-blue-200">
+                        <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start gap-1 sm:gap-2">
+                          <div className="min-w-0 flex-1">
+                            <p className="font-medium text-blue-900 text-sm truncate">{plaintiff.name}</p>
+                            <p className="text-xs sm:text-sm text-blue-700 capitalize">{plaintiff.type}</p>
+                          </div>
+                          {plaintiff.contactInfo && (
+                            <div className="text-xs text-blue-600 flex-shrink-0">
+                              {plaintiff.contactInfo.email && (
+                                <p className="truncate">📧 {plaintiff.contactInfo.email}</p>
+                              )}
+                              {plaintiff.contactInfo.phone && (
+                                <p>📞 {plaintiff.contactInfo.phone}</p>
+                              )}
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </Card>
+
+                <Card className="p-4 sm:p-6">
+                  <h4 className="font-semibold mb-3 sm:mb-4 text-red-700 flex items-center gap-2 text-sm sm:text-base">
+                    <Users className="w-3 h-3 sm:w-4 sm:h-4" />
+                    Defendants ({selectedCase.defendants.length})
+                  </h4>
+                  <div className="space-y-2 sm:space-y-3">
+                    {selectedCase.defendants.map((defendant, index) => (
+                      <div key={defendant.id} className="bg-red-50 p-2 sm:p-3 rounded-lg border border-red-200">
+                        <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start gap-1 sm:gap-2">
+                          <div className="min-w-0 flex-1">
+                            <p className="font-medium text-red-900 text-sm truncate">{defendant.name}</p>
+                            <p className="text-xs sm:text-sm text-red-700 capitalize">{defendant.type}</p>
+                          </div>
+                          {defendant.contactInfo && (
+                            <div className="text-xs text-red-600 flex-shrink-0">
+                              {defendant.contactInfo.email && (
+                                <p className="truncate">📧 {defendant.contactInfo.email}</p>
+                              )}
+                              {defendant.contactInfo.phone && (
+                                <p>📞 {defendant.contactInfo.phone}</p>
+                              )}
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </Card>
+              </div>
+
+              {/* Tags */}
+              {selectedCase.tags.length > 0 && (
+                <Card className="p-4 sm:p-6">
+                  <h4 className="font-semibold mb-3 text-gray-800 text-sm sm:text-base">Tags</h4>
+                  <div className="flex flex-wrap gap-1 sm:gap-2">
+                    {selectedCase.tags.map((tag, index) => (
+                      <Badge key={index} variant="outline" className="bg-gray-100 text-xs">
+                        {tag}
+                      </Badge>
+                    ))}
+                  </div>
+                </Card>
+              )}
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

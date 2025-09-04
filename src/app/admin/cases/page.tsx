@@ -618,7 +618,7 @@ export default function AdminCases({
         <div className={getGridClasses()}>
           {filteredCases.map((caseItem, index) => (
             <CaseCard
-              key={caseItem.id}
+              key={index}
               caseItem={caseItem}
               onView={viewCaseDetails}
               onEdit={handleEditCase}

@@ -62,6 +62,7 @@ interface CasesModuleConfig {
   showCaseMetrics?: boolean;
   customTitle?: string;
   customDescription?: string;
+  showCaseHistory?: boolean;
 }
 
 interface CasesModuleProps {
@@ -99,7 +100,8 @@ export const defaultConfig: CasesModuleConfig = {
   showCaseNumbers: true,
   showCaseMetrics: true,
   customTitle: 'Case Management',
-  customDescription: 'Manage all cases in the system'
+  customDescription: 'Manage all cases in the system',
+  showCaseHistory: true,
 };
 
 // Mobile-optimized Filter Panel Component

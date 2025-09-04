@@ -11,4 +11,6 @@ export const COLLECTIONS = {
     CALENDAR: 'calendar',
     SEQUENCES: 'sequences',
     STATS: 'stats',
+    CASE_STATUS_HISTORY: 'case_status_history', // New collection for case status changes
+    CASE_EVENTS: 'case_events', // New collection for case timeline events
 } as const;

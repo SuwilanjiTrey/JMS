@@ -8,9 +8,21 @@ export const COLLECTIONS = {
   RULINGS: 'rulings',
   ROLES: 'roles',
   COURTS: 'courts',
+  AUDIT_LOGS: 'audit_logs',
   LAW_FIRMS: 'lawFirms',
   CALENDAR_EVENTS: 'calendarEvents',
-  NOTIFICATIONS: 'notifications'
+
+  AUDIT_LOGS: 'audit_logs',
+
+  NOTIFICATIONS: 'notifications',
+  CALENDAR: 'calendar',
+  SEQUENCES: 'sequences',
+  STATS: 'stats',
+  JUDGES: 'judges',
+  AI_QUERIES: 'aiQueries',
+  PARLIAMENT_UPDATES: 'parliamentUpdates',
+    CASE_STATUS_HISTORY: 'case_status_history', 
+  CASE_PROCESS_STAGES: 'case_process_stages', 
 } as const;
 
 

@@ -1,5 +1,4 @@
-//cases module
-
+// Updated main cases component with history integration
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -25,21 +24,36 @@ import {
   AlertCircle,
   CheckCircle,
   Loader2,
+  History,
   Trash2
 } from 'lucide-react';
-import { CASE_STATUS_COLORS, CASE_PRIORITY_COLORS, CASE_TYPE_LABELS } from '@/models';
+import { CASE_STATUS_COLORS, CASE_PRIORITY_COLORS, CASE_TYPE_LABELS, CASE_STATUS_LABELS } from '@/models';
 import type { Case, CaseCreationData, CaseStatus, CasePriority, CaseType, CaseParty } from '@/models';
 import {
   uploadData,
   setDetails,
   getAll,
-  deleteData
+  getAllWhereEquals,
+  deleteData,
 } from '@/lib/utils/firebase/general';
 import { COLLECTIONS } from '@/lib/constants/firebase/collections';
+
+// Import history utilities
+import {
+  createStatusHistory,
+  createTimelineEvent,
+  updateCaseStatusWithHistory,
+  CaseHistoryHelpers
+} from '@/lib/utils/caseHistory';
 
 import { CaseCard, PartyFormSection, MobileFilterPanel } from '@/components/exports/cases_module';
 import type { CasesModuleConfig, CasesModuleProps } from '@/components/exports/cases_module';
 import { defaultConfig } from '@/components/exports/cases_module';
+import CaseTimeline from '@/components/CaseTimeline';
+import { trackStatusChange } from '@/lib/utils/caseHistory';
+import { CaseProcessStage } from '@/models';
+import ProcessStageManager from '@/components/ProcessStageManager';
+import { trackProcessStage } from '@/lib/utils/caseHistory';
 
 export default function AdminCases({
   config = defaultConfig,
@@ -50,8 +64,13 @@ export default function AdminCases({
   initialFilters = {},
   customActions = []
 }: CasesModuleProps) {
-  const mergedConfig = { ...defaultConfig, ...config };
-  
+  const mergedConfig = {
+    ...defaultConfig,
+    ...config,
+    // Enable case history by default
+    showCaseHistory: config.showCaseHistory !== false
+  };
+
   const [cases, setCases] = useState<Case[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
@@ -66,6 +85,9 @@ export default function AdminCases({
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
+  const [showHistoryDialog, setShowHistoryDialog] = useState(false);
+  const [selectedCaseForHistory, setSelectedCaseForHistory] = useState<Case | null>(null);
+  const [processStages, setProcessStages] = useState<CaseProcessStage[]>([]);
 
   // Case form state
   const [caseForm, setCaseForm] = useState<CaseCreationData & { id?: string }>({
@@ -105,7 +127,10 @@ export default function AdminCases({
         ...caseItem,
         createdAt: caseItem.createdAt?.toDate ? caseItem.createdAt.toDate() : new Date(caseItem.createdAt),
         updatedAt: caseItem.updatedAt?.toDate ? caseItem.updatedAt.toDate() : new Date(caseItem.updatedAt),
-        nextHearingDate: caseItem.nextHearingDate?.toDate ? caseItem.nextHearingDate.toDate() : caseItem.nextHearingDate
+        nextHearingDate: caseItem.nextHearingDate?.toDate ? caseItem.nextHearingDate.toDate() : caseItem.nextHearingDate,
+        // Initialize empty arrays for history if not present
+        statusHistory: caseItem.statusHistory || [],
+        timeline: caseItem.timeline || []
       }));
       setCases(processedCases as Case[]);
     } catch (error) {
@@ -181,6 +206,19 @@ export default function AdminCases({
           setShowCaseDialog(false);
           onCaseUpdate?.(updatedCase);
           resetForm();
+
+          // Create timeline event for case update
+          await createTimelineEvent(
+            caseForm.id,
+            'note',
+            'Case Updated',
+            'Case information was updated',
+            'current_user_id', // Replace with actual user ID
+            {
+              updateType: 'case_details',
+              fields: ['title', 'description', 'type', 'priority', 'parties']
+            }
+          );
         } else {
           setError(result.error || 'Failed to update case');
         }
@@ -195,7 +233,7 @@ export default function AdminCases({
           title: caseForm.title,
           description: caseForm.description,
           type: caseForm.type,
-          status: 'draft',
+          status: 'filed', // Start with 'filed' status
           priority: caseForm.priority,
           createdAt: new Date(),
           updatedAt: new Date(),
@@ -213,10 +251,12 @@ export default function AdminCases({
           documents: [],
           rulings: [],
           tags: caseForm.tags || [],
-          estimatedDuration: caseForm.estimatedDuration
+          estimatedDuration: caseForm.estimatedDuration,
+          statusHistory: [],
+          timeline: []
         };
 
-        const success = await uploadData(COLLECTIONS.CASES, newCase);
+        const success = await setDetails(newCase, COLLECTIONS.CASES, newCase.id);
 
         if (success) {
           setCases(prev => [...prev, newCase]);
@@ -224,6 +264,36 @@ export default function AdminCases({
           setShowCaseDialog(false);
           onCaseCreate?.(newCase);
           resetForm();
+
+          // Create initial status history and timeline event
+          await createStatusHistory(
+            caseId,
+            undefined,
+            'filed',
+            'current_user_id', // Replace with actual user ID
+            'Initial case filing'
+          );
+
+          // Add parties to timeline
+          for (const plaintiff of caseForm.plaintiffs) {
+            await CaseHistoryHelpers.onPartyChange(
+              caseId,
+              'added',
+              plaintiff.name,
+              'plaintiff',
+              'current_user_id'
+            );
+          }
+
+          for (const defendant of caseForm.defendants) {
+            await CaseHistoryHelpers.onPartyChange(
+              caseId,
+              'added',
+              defendant.name,
+              'defendant',
+              'current_user_id'
+            );
+          }
         } else {
           setError('Failed to create case. Please try again.');
         }
@@ -272,26 +342,59 @@ export default function AdminCases({
     setSelectedCase(null);
   };
 
+<<<<<<< HEAD
+  // In your cases page, update the updateCaseStatus function:
+=======
+  // Enhanced status update with history tracking
+>>>>>>> a0af6fa6dce3584581274ea880ddffa33bcbc4ba
   const updateCaseStatus = async (caseId: string, newStatus: CaseStatus) => {
     setSubmitting(true);
     try {
       const caseToUpdate = cases.find(c => c.id === caseId);
       if (!caseToUpdate) return;
 
+<<<<<<< HEAD
+      // Track the status change in history
+      await trackStatusChange(
+        caseId,
+        newStatus,
+        'current_user_id', // Replace with actual user ID
+        `Status changed from ${caseToUpdate.status} to ${newStatus}`,
+        caseToUpdate.status
+      );
+
       const updatedCase = {
         ...caseToUpdate,
         status: newStatus,
         updatedAt: new Date()
       };
+=======
+      const previousStatus = caseToUpdate.status;
+>>>>>>> a0af6fa6dce3584581274ea880ddffa33bcbc4ba
 
-      const result = await setDetails(updatedCase, COLLECTIONS.CASES, caseId);
+      // Use the enhanced status update function
+      const result = await updateCaseStatusWithHistory(
+        caseId,
+        previousStatus,
+        newStatus,
+        'current_user_id', // Replace with actual user ID
+        `Status updated via case management interface`,
+        `Case status changed from ${previousStatus} to ${newStatus}`
+      );
 
       if (result.success) {
+        // Update local state
+        const updatedCase = {
+          ...caseToUpdate,
+          status: newStatus,
+          updatedAt: new Date()
+        };
+
         setCases(prev => prev.map(c => c.id === caseId ? updatedCase : c));
-        setSuccess(`Case status updated to ${newStatus}!`);
+        setSuccess(`Case status updated to ${CASE_STATUS_LABELS[newStatus]}!`);
         onCaseUpdate?.(updatedCase);
       } else {
-        setError('Failed to update case status');
+        setError(result.error || 'Failed to update case status');
       }
     } catch (error) {
       console.error('Error updating case status:', error);
@@ -300,7 +403,6 @@ export default function AdminCases({
       setSubmitting(false);
     }
   };
-
   const addParty = (type: 'plaintiffs' | 'defendants') => {
     setCaseForm(prev => ({
       ...prev,
@@ -335,10 +437,23 @@ export default function AdminCases({
     return matchesSearch && matchesStatus && matchesPriority && matchesType;
   });
 
-  const viewCaseDetails = (caseItem: Case) => {
+
+  const viewCaseDetails = async (caseItem: Case) => {
     setSelectedCase(caseItem);
     setShowDetailsDialog(true);
     onCaseSelect?.(caseItem);
+
+    // Fetch process stages for this case
+    try {
+      const stages = await getAllWhereEquals(
+        COLLECTIONS.CASE_PROCESS_STAGES,
+        'caseId',
+        caseItem.id
+      ) as CaseProcessStage[];
+      setProcessStages(stages);
+    } catch (error) {
+      console.error('Error fetching process stages:', error);
+    }
   };
 
   // Grid columns based on config
@@ -346,6 +461,12 @@ export default function AdminCases({
     const { mobile, tablet, desktop } = mergedConfig.cardLayoutColumns!;
     return `grid grid-cols-${mobile} md:grid-cols-${tablet} lg:grid-cols-${desktop} gap-4 sm:gap-6`;
   };
+
+  const handleViewHistory = (caseItem: Case) => {
+    setSelectedCaseForHistory(caseItem);
+    setShowHistoryDialog(true);
+  };
+
 
   return (
     <div className="w-full max-w-7xl mx-auto p-3 sm:p-6 space-y-4 sm:space-y-6">
@@ -416,11 +537,14 @@ export default function AdminCases({
                     </SelectTrigger>
                     <SelectContent>
                       <SelectItem value="all">All Status</SelectItem>
-                      <SelectItem value="draft">Draft</SelectItem>
-                      <SelectItem value="active">Active</SelectItem>
-                      <SelectItem value="pending">Pending</SelectItem>
+                      <SelectItem value="filed">Case Filed</SelectItem>
+                      <SelectItem value="summons">Summons Issued</SelectItem>
+                      <SelectItem value="takes_off">Case Takes Off</SelectItem>
+                      <SelectItem value="recording">Recording</SelectItem>
+                      <SelectItem value="adjournment">Adjournment</SelectItem>
+                      <SelectItem value="ruling">Ruling</SelectItem>
+                      <SelectItem value="appeal">Appeal</SelectItem>
                       <SelectItem value="closed">Closed</SelectItem>
-                      <SelectItem value="appealed">Appealed</SelectItem>
                       <SelectItem value="dismissed">Dismissed</SelectItem>
                     </SelectContent>
                   </Select>
@@ -471,7 +595,6 @@ export default function AdminCases({
                     onClick={() => setShowMobileFilters(true)}
                     className="gap-2"
                   >
-                
                     Filters
                   </Button>
                 </div>
@@ -541,9 +664,9 @@ export default function AdminCases({
         </Card>
       ) : (
         <div className={getGridClasses()}>
-          {filteredCases.map((caseItem) => (
+          {filteredCases.map((caseItem, index) => (
             <CaseCard
-              key={caseItem.id}
+              key={index}
               caseItem={caseItem}
               onView={viewCaseDetails}
               onEdit={handleEditCase}
@@ -551,26 +674,14 @@ export default function AdminCases({
               submitting={submitting}
               config={mergedConfig}
               customActions={customActions}
+              onViewHistory={handleViewHistory}
             />
           ))}
         </div>
       )}
 
-      {/* Mobile Filter Panel */}
-      {mergedConfig.enableFilters && (
-        <MobileFilterPanel
-          searchTerm={searchTerm}
-          setSearchTerm={setSearchTerm}
-          statusFilter={statusFilter}
-          setStatusFilter={setStatusFilter}
-          priorityFilter={priorityFilter}
-          setPriorityFilter={setPriorityFilter}
-          typeFilter={typeFilter}
-          setTypeFilter={setTypeFilter}
-          isOpen={showMobileFilters}
-          setIsOpen={setShowMobileFilters}
-        />
-      )}
+      {/* Rest of the component remains the same... */}
+      {/* Mobile Filter Panel, Case Form Dialog, Case Details Dialog, etc. */}
 
       {/* Mobile-Optimized Case Form Dialog */}
       <Dialog open={showCaseDialog} onOpenChange={setShowCaseDialog}>
@@ -785,6 +896,28 @@ export default function AdminCases({
 
           {selectedCase && (
             <div className="space-y-4 sm:space-y-6">
+              <ProcessStageManager
+                caseId={selectedCase.id}
+                currentStages={processStages.map(stage => ({
+                  stage: stage.stage,
+                  date: stage.date
+                }))}
+                onStageComplete={async (stageType, notes) => {
+                  await trackProcessStage(
+                    selectedCase.id,
+                    stageType,
+                    'current_user_id', // Replace with actual user ID from auth context
+                    notes
+                  );
+                  // Refresh the process stages
+                  const updatedStages = await getAllWhereEquals(
+                    COLLECTIONS.CASE_PROCESS_STAGES,
+                    'caseId',
+                    selectedCase.id
+                  ) as CaseProcessStage[];
+                  setProcessStages(updatedStages);
+                }}
+              />
               {/* Case Overview - Mobile Stacked */}
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-6">
                 <Card className="p-3 sm:p-4">
@@ -965,6 +1098,17 @@ export default function AdminCases({
                     ))}
                   </div>
                 </Card>
+              )}
+
+              {selectedCaseForHistory && (
+                <CaseTimeline
+                  caseItem={selectedCaseForHistory}
+                  isOpen={showHistoryDialog}
+                  onClose={() => {
+                    setShowHistoryDialog(false);
+                    setSelectedCaseForHistory(null);
+                  }}
+                />
               )}
             </div>
           )}

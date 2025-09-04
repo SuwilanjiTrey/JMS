@@ -247,7 +247,7 @@ export default function AdminCases({
           timeline: []
         };
 
-        const success = await uploadData(COLLECTIONS.CASES, newCase);
+        const success = await setDetails(newCase, COLLECTIONS.CASES, newCase.id);
 
         if (success) {
           setCases(prev => [...prev, newCase]);

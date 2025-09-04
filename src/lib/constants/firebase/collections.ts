@@ -1,5 +1,6 @@
 // Collection names
 export const COLLECTIONS = {
+
   USERS: 'users',
   CASES: 'cases',
   HEARINGS: 'hearings',
@@ -23,6 +24,7 @@ export const COLLECTIONS = {
     CASE_STATUS_HISTORY: 'case_status_history', 
   CASE_PROCESS_STAGES: 'case_process_stages', 
 } as const;
+
 
 
 

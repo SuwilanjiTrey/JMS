@@ -1,8 +1,42 @@
 import { UserRole } from './Role';
 
-export type CaseStatus = 'draft' | 'active' | 'pending' | 'closed' | 'appealed' | 'dismissed';
+// Updated case statuses to reflect actual judicial process
+export type CaseStatus = 'filed' | 'summons' | 'takes_off' | 'recording' | 'adjournment' | 'ruling' | 'appeal' | 'closed' | 'dismissed';
 export type CasePriority = 'low' | 'medium' | 'high' | 'urgent';
 export type CaseType = 'civil' | 'criminal' | 'family' | 'commercial' | 'constitutional' | 'other';
+
+// New interface for case status history
+export interface CaseStatusHistory {
+  id: string;
+  caseId: string;
+  previousStatus?: CaseStatus;
+  newStatus: CaseStatus;
+  changedBy: string; // User ID
+  changedAt: Date;
+  reason?: string;
+  notes?: string;
+  documents?: string[]; // Document IDs related to status change
+}
+
+// Event types for case timeline
+export type CaseEventType = 'status_change' | 'hearing' | 'document_upload' | 'ruling' | 'assignment' | 'note' | 'party_change';
+
+// Unified case event for timeline
+export interface CaseEvent {
+  id: string;
+  caseId: string;
+  type: CaseEventType;
+  title: string;
+  description: string;
+  createdAt: Date;
+  createdBy: string;
+  relatedEntityId?: string; // ID of related hearing, document, etc.
+  metadata?: {
+    previousValue?: any;
+    newValue?: any;
+    [key: string]: any;
+  };
+}
 
 export interface Case {
   id: string;
@@ -26,6 +60,10 @@ export interface Case {
   estimatedDuration?: number; // in days
   actualDuration?: number; // in days
   nextHearingDate?: Date;
+
+  // New fields for history tracking
+  statusHistory: CaseStatusHistory[];
+  timeline: CaseEvent[];
 }
 
 export interface CaseParty {
@@ -128,13 +166,30 @@ export interface CaseFilter {
   };
 }
 
+// Updated status colors for new statuses
 export const CASE_STATUS_COLORS: Record<CaseStatus, string> = {
-  draft: 'bg-gray-100 text-gray-800',
-  active: 'bg-blue-100 text-blue-800',
-  pending: 'bg-yellow-100 text-yellow-800',
+  filed: 'bg-blue-100 text-blue-800',
+  summons: 'bg-indigo-100 text-indigo-800',
+  takes_off: 'bg-cyan-100 text-cyan-800',
+  recording: 'bg-yellow-100 text-yellow-800',
+  adjournment: 'bg-orange-100 text-orange-800',
+  ruling: 'bg-purple-100 text-purple-800',
+  appeal: 'bg-pink-100 text-pink-800',
   closed: 'bg-green-100 text-green-800',
-  appealed: 'bg-purple-100 text-purple-800',
   dismissed: 'bg-red-100 text-red-800'
+};
+
+// Updated status labels
+export const CASE_STATUS_LABELS: Record<CaseStatus, string> = {
+  filed: 'Case Filed',
+  summons: 'Summons Issued',
+  takes_off: 'Case Takes Off',
+  recording: 'Recording Stage',
+  adjournment: 'Adjournment',
+  ruling: 'Ruling',
+  appeal: 'Appeal',
+  closed: 'Closed',
+  dismissed: 'Dismissed'
 };
 
 export const CASE_PRIORITY_COLORS: Record<CasePriority, string> = {
@@ -152,32 +207,3 @@ export const CASE_TYPE_LABELS: Record<CaseType, string> = {
   constitutional: 'Constitutional',
   other: 'Other'
 };
-
-export interface CaseStatusHistory {
-  id: string;
-  caseId: string;
-  status: CaseStatus;
-  changedBy: string; // User ID
-  changedAt: Date;
-  notes?: string;
-  previousStatus?: CaseStatus;
-}
-
-export interface CaseProcessStage {
-  id: string;
-  caseId: string;
-  stage: CaseProcessStageType;
-  date: Date;
-  completedBy?: string; // User ID
-  notes?: string;
-  documents?: string[]; // Document IDs
-}
-
-export type CaseProcessStageType =
-  | 'filed'
-  | 'summons'
-  | 'takes_off'
-  | 'recording'
-  | 'adjournment'
-  | 'ruling'
-  | 'appeal';

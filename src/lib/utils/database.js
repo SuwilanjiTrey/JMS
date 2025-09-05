@@ -3,13 +3,13 @@ import Database from 'better-sqlite3';
 import path from 'path';
 import { randomUUID } from 'crypto';
 
-const db = new Database(path.join(process.cwd(), 'database.sqlite'));
+const sqlite_db = new Database(path.join(process.cwd(), 'database.sqlite'));
 
 // Enable foreign keys
-db.pragma('foreign_keys = ON');
+sqlite_db.pragma('foreign_keys = ON');
 
 // Initialize all tables
-db.exec(`
+sqlite_db.exec(`
   -- Users table
   CREATE TABLE IF NOT EXISTS users (
     id TEXT PRIMARY KEY,
@@ -266,7 +266,7 @@ const fromSQLiteDate = (dateString) => {
 export const userOperations = {
     create: (userData) => {
         const id = randomUUID();
-        const stmt = db.prepare(`
+        const stmt = sqlite_db.prepare(`
       INSERT INTO users (id, email, display_name, role, photo_url, profile_data, is_active)
       VALUES (?, ?, ?, ?, ?, ?, ?)
     `);
@@ -281,11 +281,11 @@ export const userOperations = {
             userData.isActive !== false ? 1 : 0
         );
 
-        return userOperations.findById(id);
+        return userOperations.finsqlite_dbyId(id);
     },
 
-    findById: (id) => {
-        const stmt = db.prepare('SELECT * FROM users WHERE id = ?');
+    finsqlite_dbyId: (id) => {
+        const stmt = sqlite_db.prepare('SELECT * FROM users WHERE id = ?');
         const user = stmt.get(id);
         if (!user) return null;
 
@@ -299,12 +299,12 @@ export const userOperations = {
         };
     },
 
-    findByEmail: (email) => {
-        const stmt = db.prepare('SELECT * FROM users WHERE email = ?');
+    finsqlite_dbyEmail: (email) => {
+        const stmt = sqlite_db.prepare('SELECT * FROM users WHERE email = ?');
         const user = stmt.get(email);
         if (!user) return null;
 
-        return userOperations.findById(user.id);
+        return userOperations.finsqlite_dbyId(user.id);
     },
 
     findAll: (filter = {}) => {
@@ -328,10 +328,10 @@ export const userOperations = {
 
         query += ' ORDER BY created_at DESC';
 
-        const stmt = db.prepare(query);
+        const stmt = sqlite_db.prepare(query);
         const users = stmt.all(...params);
 
-        return users.map(user => userOperations.findById(user.id));
+        return users.map(user => userOperations.finsqlite_dbyId(user.id));
     },
 
     update: (id, updateData) => {
@@ -366,19 +366,19 @@ export const userOperations = {
         updates.push('updated_at = CURRENT_TIMESTAMP');
         params.push(id);
 
-        const stmt = db.prepare(`UPDATE users SET ${updates.join(', ')} WHERE id = ?`);
+        const stmt = sqlite_db.prepare(`UPDATE users SET ${updates.join(', ')} WHERE id = ?`);
         stmt.run(...params);
 
-        return userOperations.findById(id);
+        return userOperations.finsqlite_dbyId(id);
     },
 
     delete: (id) => {
-        const stmt = db.prepare('DELETE FROM users WHERE id = ?');
+        const stmt = sqlite_db.prepare('DELETE FROM users WHERE id = ?');
         return stmt.run(id).changes > 0;
     },
 
     updateLastLogin: (id) => {
-        const stmt = db.prepare('UPDATE users SET last_login_at = CURRENT_TIMESTAMP WHERE id = ?');
+        const stmt = sqlite_db.prepare('UPDATE users SET last_login_at = CURRENT_TIMESTAMP WHERE id = ?');
         stmt.run(id);
     }
 };
@@ -389,7 +389,7 @@ export const caseOperations = {
         const id = randomUUID();
         const caseNumber = caseData.caseNumber || generateCaseNumber(caseData.type);
 
-        const stmt = db.prepare(`
+        const stmt = sqlite_db.prepare(`
       INSERT INTO cases (id, case_number, title, description, type, status, priority, created_by, assigned_to, estimated_duration, tags)
       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     `);
@@ -402,7 +402,7 @@ export const caseOperations = {
             caseData.type,
             caseData.status || 'filed',
             caseData.priority || 'medium',
-            caseData.createdBy,
+            caseData.createsqlite_dby,
             caseData.assignedTo || null,
             caseData.estimatedDuration || null,
             caseData.tags ? JSON.stringify(caseData.tags) : null
@@ -445,26 +445,26 @@ export const caseOperations = {
             type: 'status_change',
             title: 'Case Created',
             description: `Case ${caseNumber} has been created`,
-            createdBy: caseData.createdBy
+            createsqlite_dby: caseData.createsqlite_dby
         });
 
-        return caseOperations.findById(id);
+        return caseOperations.finsqlite_dbyId(id);
     },
 
-    findById: (id) => {
-        const stmt = db.prepare('SELECT * FROM cases WHERE id = ?');
+    finsqlite_dbyId: (id) => {
+        const stmt = sqlite_db.prepare('SELECT * FROM cases WHERE id = ?');
         const case_ = stmt.get(id);
         if (!case_) return null;
 
         // Get related data
-        const plaintiffs = casePartyOperations.findByCaseId(id, 'plaintiff');
-        const defendants = casePartyOperations.findByCaseId(id, 'defendant');
-        const lawyers = caseLawyerOperations.findByCaseId(id);
-        const hearings = hearingOperations.findByCaseId(id);
-        const documents = documentOperations.findByCaseId(id);
-        const rulings = rulingOperations.findByCaseId(id);
-        const statusHistory = caseStatusHistoryOperations.findByCaseId(id);
-        const timeline = caseEventOperations.findByCaseId(id);
+        const plaintiffs = casePartyOperations.finsqlite_dbyCaseId(id, 'plaintiff');
+        const defendants = casePartyOperations.finsqlite_dbyCaseId(id, 'defendant');
+        const lawyers = caseLawyerOperations.finsqlite_dbyCaseId(id);
+        const hearings = hearingOperations.finsqlite_dbyCaseId(id);
+        const documents = documentOperations.finsqlite_dbyCaseId(id);
+        const rulings = rulingOperations.finsqlite_dbyCaseId(id);
+        const statusHistory = caseStatusHistoryOperations.finsqlite_dbyCaseId(id);
+        const timeline = caseEventOperations.finsqlite_dbyCaseId(id);
 
         return {
             ...case_,
@@ -507,9 +507,9 @@ export const caseOperations = {
             params.push(filter.assignedTo);
         }
 
-        if (filter.createdBy) {
+        if (filter.createsqlite_dby) {
             query += ' AND created_by = ?';
-            params.push(filter.createdBy);
+            params.push(filter.createsqlite_dby);
         }
 
         if (filter.search) {
@@ -524,7 +524,7 @@ export const caseOperations = {
 
         query += ' ORDER BY created_at DESC';
 
-        const stmt = db.prepare(query);
+        const stmt = sqlite_db.prepare(query);
         const cases = stmt.all(...params);
 
         return cases.map(case_ => ({
@@ -555,13 +555,13 @@ export const caseOperations = {
             params.push(updateData.status);
 
             // Record status change in history
-            const currentCase = caseOperations.findById(id);
+            const currentCase = caseOperations.finsqlite_dbyId(id);
             if (currentCase && currentCase.status !== updateData.status) {
                 caseStatusHistoryOperations.create({
                     caseId: id,
                     previousStatus: currentCase.status,
                     newStatus: updateData.status,
-                    changedBy: updateData.changedBy || 'system'
+                    changesqlite_dby: updateData.changesqlite_dby || 'system'
                 });
             }
         }
@@ -599,14 +599,14 @@ export const caseOperations = {
         updates.push('updated_at = CURRENT_TIMESTAMP');
         params.push(id);
 
-        const stmt = db.prepare(`UPDATE cases SET ${updates.join(', ')} WHERE id = ?`);
+        const stmt = sqlite_db.prepare(`UPDATE cases SET ${updates.join(', ')} WHERE id = ?`);
         stmt.run(...params);
 
-        return caseOperations.findById(id);
+        return caseOperations.finsqlite_dbyId(id);
     },
 
     delete: (id) => {
-        const stmt = db.prepare('DELETE FROM cases WHERE id = ?');
+        const stmt = sqlite_db.prepare('DELETE FROM cases WHERE id = ?');
         return stmt.run(id).changes > 0;
     }
 };
@@ -615,7 +615,7 @@ export const caseOperations = {
 export const casePartyOperations = {
     create: (partyData) => {
         const id = randomUUID();
-        const stmt = db.prepare(`
+        const stmt = sqlite_db.prepare(`
       INSERT INTO case_parties (id, case_id, name, type, party_type, contact_info, representative)
       VALUES (?, ?, ?, ?, ?, ?, ?)
     `);
@@ -630,11 +630,11 @@ export const casePartyOperations = {
             partyData.representative || null
         );
 
-        return casePartyOperations.findById(id);
+        return casePartyOperations.finsqlite_dbyId(id);
     },
 
-    findById: (id) => {
-        const stmt = db.prepare('SELECT * FROM case_parties WHERE id = ?');
+    finsqlite_dbyId: (id) => {
+        const stmt = sqlite_db.prepare('SELECT * FROM case_parties WHERE id = ?');
         const party = stmt.get(id);
         if (!party) return null;
 
@@ -645,7 +645,7 @@ export const casePartyOperations = {
         };
     },
 
-    findByCaseId: (caseId, partyType = null) => {
+    finsqlite_dbyCaseId: (caseId, partyType = null) => {
         let query = 'SELECT * FROM case_parties WHERE case_id = ?';
         const params = [caseId];
 
@@ -654,7 +654,7 @@ export const casePartyOperations = {
             params.push(partyType);
         }
 
-        const stmt = db.prepare(query);
+        const stmt = sqlite_db.prepare(query);
         const parties = stmt.all(...params);
 
         return parties.map(party => ({
@@ -690,14 +690,14 @@ export const casePartyOperations = {
 
         params.push(id);
 
-        const stmt = db.prepare(`UPDATE case_parties SET ${updates.join(', ')} WHERE id = ?`);
+        const stmt = sqlite_db.prepare(`UPDATE case_parties SET ${updates.join(', ')} WHERE id = ?`);
         stmt.run(...params);
 
-        return casePartyOperations.findById(id);
+        return casePartyOperations.finsqlite_dbyId(id);
     },
 
     delete: (id) => {
-        const stmt = db.prepare('DELETE FROM case_parties WHERE id = ?');
+        const stmt = sqlite_db.prepare('DELETE FROM case_parties WHERE id = ?');
         return stmt.run(id).changes > 0;
     }
 };
@@ -706,7 +706,7 @@ export const casePartyOperations = {
 export const caseLawyerOperations = {
     create: (lawyerData) => {
         const id = randomUUID();
-        const stmt = db.prepare(`
+        const stmt = sqlite_db.prepare(`
       INSERT INTO case_lawyers (id, case_id, user_id, role, is_active)
       VALUES (?, ?, ?, ?, ?)
     `);
@@ -719,11 +719,11 @@ export const caseLawyerOperations = {
             lawyerData.isActive !== false ? 1 : 0
         );
 
-        return caseLawyerOperations.findById(id);
+        return caseLawyerOperations.finsqlite_dbyId(id);
     },
 
-    findById: (id) => {
-        const stmt = db.prepare('SELECT * FROM case_lawyers WHERE id = ?');
+    finsqlite_dbyId: (id) => {
+        const stmt = sqlite_db.prepare('SELECT * FROM case_lawyers WHERE id = ?');
         const lawyer = stmt.get(id);
         if (!lawyer) return null;
 
@@ -734,8 +734,8 @@ export const caseLawyerOperations = {
         };
     },
 
-    findByCaseId: (caseId) => {
-        const stmt = db.prepare('SELECT * FROM case_lawyers WHERE case_id = ?');
+    finsqlite_dbyCaseId: (caseId) => {
+        const stmt = sqlite_db.prepare('SELECT * FROM case_lawyers WHERE case_id = ?');
         const lawyers = stmt.all(caseId);
 
         return lawyers.map(lawyer => ({
@@ -761,14 +761,14 @@ export const caseLawyerOperations = {
 
         params.push(id);
 
-        const stmt = db.prepare(`UPDATE case_lawyers SET ${updates.join(', ')} WHERE id = ?`);
+        const stmt = sqlite_db.prepare(`UPDATE case_lawyers SET ${updates.join(', ')} WHERE id = ?`);
         stmt.run(...params);
 
-        return caseLawyerOperations.findById(id);
+        return caseLawyerOperations.finsqlite_dbyId(id);
     },
 
     delete: (id) => {
-        const stmt = db.prepare('DELETE FROM case_lawyers WHERE id = ?');
+        const stmt = sqlite_db.prepare('DELETE FROM case_lawyers WHERE id = ?');
         return stmt.run(id).changes > 0;
     }
 };
@@ -777,7 +777,7 @@ export const caseLawyerOperations = {
 export const caseStatusHistoryOperations = {
     create: (historyData) => {
         const id = randomUUID();
-        const stmt = db.prepare(`
+        const stmt = sqlite_db.prepare(`
       INSERT INTO case_status_history (id, case_id, previous_status, new_status, changed_by, reason, notes, documents)
       VALUES (?, ?, ?, ?, ?, ?, ?, ?)
     `);
@@ -787,17 +787,17 @@ export const caseStatusHistoryOperations = {
             historyData.caseId,
             historyData.previousStatus || null,
             historyData.newStatus,
-            historyData.changedBy,
+            historyData.changesqlite_dby,
             historyData.reason || null,
             historyData.notes || null,
             historyData.documents ? JSON.stringify(historyData.documents) : null
         );
 
-        return caseStatusHistoryOperations.findById(id);
+        return caseStatusHistoryOperations.finsqlite_dbyId(id);
     },
 
-    findById: (id) => {
-        const stmt = db.prepare('SELECT * FROM case_status_history WHERE id = ?');
+    finsqlite_dbyId: (id) => {
+        const stmt = sqlite_db.prepare('SELECT * FROM case_status_history WHERE id = ?');
         const history = stmt.get(id);
         if (!history) return null;
 
@@ -808,8 +808,8 @@ export const caseStatusHistoryOperations = {
         };
     },
 
-    findByCaseId: (caseId) => {
-        const stmt = db.prepare('SELECT * FROM case_status_history WHERE case_id = ? ORDER BY changed_at DESC');
+    finsqlite_dbyCaseId: (caseId) => {
+        const stmt = sqlite_db.prepare('SELECT * FROM case_status_history WHERE case_id = ? ORDER BY changed_at DESC');
         const histories = stmt.all(caseId);
 
         return histories.map(history => ({
@@ -824,7 +824,7 @@ export const caseStatusHistoryOperations = {
 export const caseEventOperations = {
     create: (eventData) => {
         const id = randomUUID();
-        const stmt = db.prepare(`
+        const stmt = sqlite_db.prepare(`
       INSERT INTO case_events (id, case_id, type, title, description, created_by, related_entity_id, metadata)
       VALUES (?, ?, ?, ?, ?, ?, ?, ?)
     `);
@@ -835,16 +835,16 @@ export const caseEventOperations = {
             eventData.type,
             eventData.title,
             eventData.description,
-            eventData.createdBy,
+            eventData.createsqlite_dby,
             eventData.relatedEntityId || null,
             eventData.metadata ? JSON.stringify(eventData.metadata) : null
         );
 
-        return caseEventOperations.findById(id);
+        return caseEventOperations.finsqlite_dbyId(id);
     },
 
-    findById: (id) => {
-        const stmt = db.prepare('SELECT * FROM case_events WHERE id = ?');
+    finsqlite_dbyId: (id) => {
+        const stmt = sqlite_db.prepare('SELECT * FROM case_events WHERE id = ?');
         const event = stmt.get(id);
         if (!event) return null;
 
@@ -855,8 +855,8 @@ export const caseEventOperations = {
         };
     },
 
-    findByCaseId: (caseId) => {
-        const stmt = db.prepare('SELECT * FROM case_events WHERE case_id = ? ORDER BY created_at DESC');
+    finsqlite_dbyCaseId: (caseId) => {
+        const stmt = sqlite_db.prepare('SELECT * FROM case_events WHERE case_id = ? ORDER BY created_at DESC');
         const events = stmt.all(caseId);
 
         return events.map(event => ({
@@ -871,7 +871,7 @@ export const caseEventOperations = {
 export const hearingOperations = {
     create: (hearingData) => {
         const id = randomUUID();
-        const stmt = db.prepare(`
+        const stmt = sqlite_db.prepare(`
       INSERT INTO hearings (id, case_id, date, start_time, end_time, location, judge_id, purpose, notes, status, outcome)
       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     `);
@@ -901,11 +901,11 @@ export const hearingOperations = {
             location: hearingData.location
         });
 
-        return hearingOperations.findById(id);
+        return hearingOperations.finsqlite_dbyId(id);
     },
 
-    findById: (id) => {
-        const stmt = db.prepare('SELECT * FROM hearings WHERE id = ?');
+    finsqlite_dbyId: (id) => {
+        const stmt = sqlite_db.prepare('SELECT * FROM hearings WHERE id = ?');
         const hearing = stmt.get(id);
         if (!hearing) return null;
 
@@ -917,8 +917,8 @@ export const hearingOperations = {
         };
     },
 
-    findByCaseId: (caseId) => {
-        const stmt = db.prepare('SELECT * FROM hearings WHERE case_id = ? ORDER BY date DESC');
+    finsqlite_dbyCaseId: (caseId) => {
+        const stmt = sqlite_db.prepare('SELECT * FROM hearings WHERE case_id = ? ORDER BY date DESC');
         const hearings = stmt.all(caseId);
 
         return hearings.map(hearing => ({
@@ -929,7 +929,7 @@ export const hearingOperations = {
         }));
     },
 
-    findByJudgeId: (judgeId, dateRange = null) => {
+    finsqlite_dbyJudgeId: (judgeId, dateRange = null) => {
         let query = 'SELECT * FROM hearings WHERE judge_id = ?';
         const params = [judgeId];
 
@@ -940,7 +940,7 @@ export const hearingOperations = {
 
         query += ' ORDER BY date ASC';
 
-        const stmt = db.prepare(query);
+        const stmt = sqlite_db.prepare(query);
         const hearings = stmt.all(...params);
 
         return hearings.map(hearing => ({
@@ -998,14 +998,14 @@ export const hearingOperations = {
         updates.push('updated_at = CURRENT_TIMESTAMP');
         params.push(id);
 
-        const stmt = db.prepare(`UPDATE hearings SET ${updates.join(', ')} WHERE id = ?`);
+        const stmt = sqlite_db.prepare(`UPDATE hearings SET ${updates.join(', ')} WHERE id = ?`);
         stmt.run(...params);
 
-        return hearingOperations.findById(id);
+        return hearingOperations.finsqlite_dbyId(id);
     },
 
     delete: (id) => {
-        const stmt = db.prepare('DELETE FROM hearings WHERE id = ?');
+        const stmt = sqlite_db.prepare('DELETE FROM hearings WHERE id = ?');
         return stmt.run(id).changes > 0;
     }
 };
@@ -1014,7 +1014,7 @@ export const hearingOperations = {
 export const documentOperations = {
     create: (docData) => {
         const id = randomUUID();
-        const stmt = db.prepare(`
+        const stmt = sqlite_db.prepare(`
       INSERT INTO documents (id, title, description, type, status, signature_status, file_name, file_size, mime_type, file_path, case_id, case_number, uploaded_by, version, tags, is_public, access_level, checksum, parent_document_id, reviewers)
       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     `);
@@ -1032,7 +1032,7 @@ export const documentOperations = {
             docData.filePath || null,
             docData.caseId || null,
             docData.caseNumber || null,
-            docData.uploadedBy,
+            docData.uploadesqlite_dby,
             docData.version || 1,
             docData.tags ? JSON.stringify(docData.tags) : null,
             docData.isPublic ? 1 : 0,
@@ -1042,11 +1042,11 @@ export const documentOperations = {
             docData.reviewers ? JSON.stringify(docData.reviewers) : null
         );
 
-        return documentOperations.findById(id);
+        return documentOperations.finsqlite_dbyId(id);
     },
 
-    findById: (id) => {
-        const stmt = db.prepare('SELECT * FROM documents WHERE id = ?');
+    finsqlite_dbyId: (id) => {
+        const stmt = sqlite_db.prepare('SELECT * FROM documents WHERE id = ?');
         const doc = stmt.get(id);
         if (!doc) return null;
 
@@ -1063,8 +1063,8 @@ export const documentOperations = {
         };
     },
 
-    findByCaseId: (caseId) => {
-        const stmt = db.prepare('SELECT * FROM documents WHERE case_id = ? ORDER BY uploaded_at DESC');
+    finsqlite_dbyCaseId: (caseId) => {
+        const stmt = sqlite_db.prepare('SELECT * FROM documents WHERE case_id = ? ORDER BY uploaded_at DESC');
         const docs = stmt.all(caseId);
 
         return docs.map(doc => ({
@@ -1078,11 +1078,11 @@ export const documentOperations = {
         }));
     },
 
-    findByUploadedBy: (userId) => {
-        const stmt = db.prepare('SELECT * FROM documents WHERE uploaded_by = ? ORDER BY uploaded_at DESC');
+    finsqlite_dbyUploadesqlite_dby: (userId) => {
+        const stmt = sqlite_db.prepare('SELECT * FROM documents WHERE uploaded_by = ? ORDER BY uploaded_at DESC');
         const docs = stmt.all(userId);
 
-        return docs.map(doc => documentOperations.findById(doc.id));
+        return docs.map(doc => documentOperations.finsqlite_dbyId(doc.id));
     },
 
     update: (id, updateData) => {
@@ -1142,19 +1142,19 @@ export const documentOperations = {
         updates.push('last_modified = CURRENT_TIMESTAMP');
         params.push(id);
 
-        const stmt = db.prepare(`UPDATE documents SET ${updates.join(', ')} WHERE id = ?`);
+        const stmt = sqlite_db.prepare(`UPDATE documents SET ${updates.join(', ')} WHERE id = ?`);
         stmt.run(...params);
 
-        return documentOperations.findById(id);
+        return documentOperations.finsqlite_dbyId(id);
     },
 
     incrementDownloadCount: (id) => {
-        const stmt = db.prepare('UPDATE documents SET download_count = download_count + 1, last_accessed_at = CURRENT_TIMESTAMP WHERE id = ?');
+        const stmt = sqlite_db.prepare('UPDATE documents SET download_count = download_count + 1, last_accessed_at = CURRENT_TIMESTAMP WHERE id = ?');
         stmt.run(id);
     },
 
     delete: (id) => {
-        const stmt = db.prepare('DELETE FROM documents WHERE id = ?');
+        const stmt = sqlite_db.prepare('DELETE FROM documents WHERE id = ?');
         return stmt.run(id).changes > 0;
     }
 };
@@ -1163,7 +1163,7 @@ export const documentOperations = {
 export const rulingOperations = {
     create: (rulingData) => {
         const id = randomUUID();
-        const stmt = db.prepare(`
+        const stmt = sqlite_db.prepare(`
       INSERT INTO rulings (id, case_id, judge_id, title, content, issued_at, effective_date, type, status, documents)
       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     `);
@@ -1181,11 +1181,11 @@ export const rulingOperations = {
             rulingData.documents ? JSON.stringify(rulingData.documents) : null
         );
 
-        return rulingOperations.findById(id);
+        return rulingOperations.finsqlite_dbyId(id);
     },
 
-    findById: (id) => {
-        const stmt = db.prepare('SELECT * FROM rulings WHERE id = ?');
+    finsqlite_dbyId: (id) => {
+        const stmt = sqlite_db.prepare('SELECT * FROM rulings WHERE id = ?');
         const ruling = stmt.get(id);
         if (!ruling) return null;
 
@@ -1199,8 +1199,8 @@ export const rulingOperations = {
         };
     },
 
-    findByCaseId: (caseId) => {
-        const stmt = db.prepare('SELECT * FROM rulings WHERE case_id = ? ORDER BY issued_at DESC');
+    finsqlite_dbyCaseId: (caseId) => {
+        const stmt = sqlite_db.prepare('SELECT * FROM rulings WHERE case_id = ? ORDER BY issued_at DESC');
         const rulings = stmt.all(caseId);
 
         return rulings.map(ruling => ({
@@ -1213,11 +1213,11 @@ export const rulingOperations = {
         }));
     },
 
-    findByJudgeId: (judgeId) => {
-        const stmt = db.prepare('SELECT * FROM rulings WHERE judge_id = ? ORDER BY issued_at DESC');
+    finsqlite_dbyJudgeId: (judgeId) => {
+        const stmt = sqlite_db.prepare('SELECT * FROM rulings WHERE judge_id = ? ORDER BY issued_at DESC');
         const rulings = stmt.all(judgeId);
 
-        return rulings.map(ruling => rulingOperations.findById(ruling.id));
+        return rulings.map(ruling => rulingOperations.finsqlite_dbyId(ruling.id));
     },
 
     update: (id, updateData) => {
@@ -1252,14 +1252,14 @@ export const rulingOperations = {
         updates.push('updated_at = CURRENT_TIMESTAMP');
         params.push(id);
 
-        const stmt = db.prepare(`UPDATE rulings SET ${updates.join(', ')} WHERE id = ?`);
+        const stmt = sqlite_db.prepare(`UPDATE rulings SET ${updates.join(', ')} WHERE id = ?`);
         stmt.run(...params);
 
-        return rulingOperations.findById(id);
+        return rulingOperations.finsqlite_dbyId(id);
     },
 
     delete: (id) => {
-        const stmt = db.prepare('DELETE FROM rulings WHERE id = ?');
+        const stmt = sqlite_db.prepare('DELETE FROM rulings WHERE id = ?');
         return stmt.run(id).changes > 0;
     }
 };
@@ -1268,7 +1268,7 @@ export const rulingOperations = {
 export const calendarEventOperations = {
     create: (eventData) => {
         const id = randomUUID();
-        const stmt = db.prepare(`
+        const stmt = sqlite_db.prepare(`
       INSERT INTO calendar_events (id, case_id, hearing_id, judge_id, title, start, end, location)
       VALUES (?, ?, ?, ?, ?, ?, ?, ?)
     `);
@@ -1284,11 +1284,11 @@ export const calendarEventOperations = {
             eventData.location
         );
 
-        return calendarEventOperations.findById(id);
+        return calendarEventOperations.finsqlite_dbyId(id);
     },
 
-    findById: (id) => {
-        const stmt = db.prepare('SELECT * FROM calendar_events WHERE id = ?');
+    finsqlite_dbyId: (id) => {
+        const stmt = sqlite_db.prepare('SELECT * FROM calendar_events WHERE id = ?');
         const event = stmt.get(id);
         if (!event) return null;
 
@@ -1301,7 +1301,7 @@ export const calendarEventOperations = {
         };
     },
 
-    findByJudgeId: (judgeId, dateRange = null) => {
+    finsqlite_dbyJudgeId: (judgeId, dateRange = null) => {
         let query = 'SELECT * FROM calendar_events WHERE judge_id = ?';
         const params = [judgeId];
 
@@ -1312,7 +1312,7 @@ export const calendarEventOperations = {
 
         query += ' ORDER BY start ASC';
 
-        const stmt = db.prepare(query);
+        const stmt = sqlite_db.prepare(query);
         const events = stmt.all(...params);
 
         return events.map(event => ({
@@ -1351,14 +1351,14 @@ export const calendarEventOperations = {
         updates.push('updated_at = CURRENT_TIMESTAMP');
         params.push(id);
 
-        const stmt = db.prepare(`UPDATE calendar_events SET ${updates.join(', ')} WHERE id = ?`);
+        const stmt = sqlite_db.prepare(`UPDATE calendar_events SET ${updates.join(', ')} WHERE id = ?`);
         stmt.run(...params);
 
-        return calendarEventOperations.findById(id);
+        return calendarEventOperations.finsqlite_dbyId(id);
     },
 
     delete: (id) => {
-        const stmt = db.prepare('DELETE FROM calendar_events WHERE id = ?');
+        const stmt = sqlite_db.prepare('DELETE FROM calendar_events WHERE id = ?');
         return stmt.run(id).changes > 0;
     }
 };
@@ -1367,7 +1367,7 @@ export const calendarEventOperations = {
 export const notificationOperations = {
     create: (notificationData) => {
         const id = randomUUID();
-        const stmt = db.prepare(`
+        const stmt = sqlite_db.prepare(`
       INSERT INTO notifications (id, recipient_user_id, recipient_type, title, message, related_entity_type, related_entity_id)
       VALUES (?, ?, ?, ?, ?, ?, ?)
     `);
@@ -1382,11 +1382,11 @@ export const notificationOperations = {
             notificationData.relatedEntity?.id || null
         );
 
-        return notificationOperations.findById(id);
+        return notificationOperations.finsqlite_dbyId(id);
     },
 
-    findById: (id) => {
-        const stmt = db.prepare('SELECT * FROM notifications WHERE id = ?');
+    finsqlite_dbyId: (id) => {
+        const stmt = sqlite_db.prepare('SELECT * FROM notifications WHERE id = ?');
         const notification = stmt.get(id);
         if (!notification) return null;
 
@@ -1401,7 +1401,7 @@ export const notificationOperations = {
         };
     },
 
-    findByUserId: (userId, unreadOnly = false) => {
+    finsqlite_dbyUserId: (userId, unreadOnly = false) => {
         let query = 'SELECT * FROM notifications WHERE recipient_user_id = ?';
         const params = [userId];
 
@@ -1411,7 +1411,7 @@ export const notificationOperations = {
 
         query += ' ORDER BY created_at DESC';
 
-        const stmt = db.prepare(query);
+        const stmt = sqlite_db.prepare(query);
         const notifications = stmt.all(...params);
 
         return notifications.map(notification => ({
@@ -1426,18 +1426,18 @@ export const notificationOperations = {
     },
 
     markAsRead: (id) => {
-        const stmt = db.prepare('UPDATE notifications SET read_at = CURRENT_TIMESTAMP WHERE id = ?');
+        const stmt = sqlite_db.prepare('UPDATE notifications SET read_at = CURRENT_TIMESTAMP WHERE id = ?');
         stmt.run(id);
-        return notificationOperations.findById(id);
+        return notificationOperations.finsqlite_dbyId(id);
     },
 
     markAllAsRead: (userId) => {
-        const stmt = db.prepare('UPDATE notifications SET read_at = CURRENT_TIMESTAMP WHERE recipient_user_id = ? AND read_at IS NULL');
+        const stmt = sqlite_db.prepare('UPDATE notifications SET read_at = CURRENT_TIMESTAMP WHERE recipient_user_id = ? AND read_at IS NULL');
         return stmt.run(userId).changes;
     },
 
     delete: (id) => {
-        const stmt = db.prepare('DELETE FROM notifications WHERE id = ?');
+        const stmt = sqlite_db.prepare('DELETE FROM notifications WHERE id = ?');
         return stmt.run(id).changes > 0;
     }
 };
@@ -1446,7 +1446,7 @@ export const notificationOperations = {
 export const auditLogOperations = {
     create: (auditData) => {
         const id = randomUUID();
-        const stmt = db.prepare(`
+        const stmt = sqlite_db.prepare(`
       INSERT INTO audit_logs (id, actor_id, action, entity_type, entity_id, details, ip, user_agent)
       VALUES (?, ?, ?, ?, ?, ?, ?, ?)
     `);
@@ -1462,11 +1462,11 @@ export const auditLogOperations = {
             auditData.userAgent || null
         );
 
-        return auditLogOperations.findById(id);
+        return auditLogOperations.finsqlite_dbyId(id);
     },
 
-    findById: (id) => {
-        const stmt = db.prepare('SELECT * FROM audit_logs WHERE id = ?');
+    finsqlite_dbyId: (id) => {
+        const stmt = sqlite_db.prepare('SELECT * FROM audit_logs WHERE id = ?');
         const log = stmt.get(id);
         if (!log) return null;
 
@@ -1477,8 +1477,8 @@ export const auditLogOperations = {
         };
     },
 
-    findByEntity: (entityType, entityId) => {
-        const stmt = db.prepare('SELECT * FROM audit_logs WHERE entity_type = ? AND entity_id = ? ORDER BY timestamp DESC');
+    finsqlite_dbyEntity: (entityType, entityId) => {
+        const stmt = sqlite_db.prepare('SELECT * FROM audit_logs WHERE entity_type = ? AND entity_id = ? ORDER BY timestamp DESC');
         const logs = stmt.all(entityType, entityId);
 
         return logs.map(log => ({
@@ -1488,11 +1488,11 @@ export const auditLogOperations = {
         }));
     },
 
-    findByActor: (actorId, limit = 100) => {
-        const stmt = db.prepare('SELECT * FROM audit_logs WHERE actor_id = ? ORDER BY timestamp DESC LIMIT ?');
+    finsqlite_dbyActor: (actorId, limit = 100) => {
+        const stmt = sqlite_db.prepare('SELECT * FROM audit_logs WHERE actor_id = ? ORDER BY timestamp DESC LIMIT ?');
         const logs = stmt.all(actorId, limit);
 
-        return logs.map(log => auditLogOperations.findById(log.id));
+        return logs.map(log => auditLogOperations.finsqlite_dbyId(log.id));
     }
 };
 
@@ -1502,18 +1502,18 @@ export const sequenceOperations = {
         const id = `${type}_${year}`;
 
         // Try to get existing counter
-        let stmt = db.prepare('SELECT * FROM sequence_counters WHERE id = ?');
+        let stmt = sqlite_db.prepare('SELECT * FROM sequence_counters WHERE id = ?');
         let counter = stmt.get(id);
 
         if (!counter) {
             // Create new counter
-            stmt = db.prepare('INSERT INTO sequence_counters (id, current, year) VALUES (?, 0, ?)');
+            stmt = sqlite_db.prepare('INSERT INTO sequence_counters (id, current, year) VALUES (?, 0, ?)');
             stmt.run(id, year);
             counter = { id, current: 0, year };
         }
 
         // Increment counter
-        stmt = db.prepare('UPDATE sequence_counters SET current = current + 1, updated_at = CURRENT_TIMESTAMP WHERE id = ?');
+        stmt = sqlite_db.prepare('UPDATE sequence_counters SET current = current + 1, updated_at = CURRENT_TIMESTAMP WHERE id = ?');
         stmt.run(id);
 
         return counter.current + 1;
@@ -1521,7 +1521,7 @@ export const sequenceOperations = {
 
     reset: (type, year) => {
         const id = `${type}_${year}`;
-        const stmt = db.prepare('UPDATE sequence_counters SET current = 0, updated_at = CURRENT_TIMESTAMP WHERE id = ?');
+        const stmt = sqlite_db.prepare('UPDATE sequence_counters SET current = 0, updated_at = CURRENT_TIMESTAMP WHERE id = ?');
         return stmt.run(id).changes > 0;
     }
 };
@@ -1530,17 +1530,17 @@ export const sequenceOperations = {
 export const systemAlertOperations = {
     create: (alertData) => {
         const id = randomUUID();
-        const stmt = db.prepare(`
+        const stmt = sqlite_db.prepare(`
       INSERT INTO system_alerts (id, type, message)
       VALUES (?, ?, ?)
     `);
 
         stmt.run(id, alertData.type, alertData.message);
-        return systemAlertOperations.findById(id);
+        return systemAlertOperations.finsqlite_dbyId(id);
     },
 
-    findById: (id) => {
-        const stmt = db.prepare('SELECT * FROM system_alerts WHERE id = ?');
+    finsqlite_dbyId: (id) => {
+        const stmt = sqlite_db.prepare('SELECT * FROM system_alerts WHERE id = ?');
         const alert = stmt.get(id);
         if (!alert) return null;
 
@@ -1558,7 +1558,7 @@ export const systemAlertOperations = {
         }
         query += ' ORDER BY timestamp DESC';
 
-        const stmt = db.prepare(query);
+        const stmt = sqlite_db.prepare(query);
         const alerts = stmt.all();
 
         return alerts.map(alert => ({
@@ -1569,12 +1569,12 @@ export const systemAlertOperations = {
     },
 
     resolve: (id) => {
-        const stmt = db.prepare('UPDATE system_alerts SET is_resolved = 1 WHERE id = ?');
+        const stmt = sqlite_db.prepare('UPDATE system_alerts SET is_resolved = 1 WHERE id = ?');
         return stmt.run(id).changes > 0;
     },
 
     delete: (id) => {
-        const stmt = db.prepare('DELETE FROM system_alerts WHERE id = ?');
+        const stmt = sqlite_db.prepare('DELETE FROM system_alerts WHERE id = ?');
         return stmt.run(id).changes > 0;
     }
 };
@@ -1599,7 +1599,7 @@ function generateCaseNumber(type, year = new Date().getFullYear()) {
 // Dashboard and Report Operations
 export const reportOperations = {
     getCaseloadReport: () => {
-        const stmt = db.prepare(`
+        const stmt = sqlite_db.prepare(`
       SELECT status, COUNT(*) as total
       FROM cases
       GROUP BY status
@@ -1609,7 +1609,7 @@ export const reportOperations = {
     },
 
     getPerformanceMetrics: () => {
-        const stmt = db.prepare(`
+        const stmt = sqlite_db.prepare(`
       SELECT 
         u.id as judgeId,
         u.display_name as judgeName,
@@ -1626,7 +1626,7 @@ export const reportOperations = {
     },
 
     getTrendData: (days = 30) => {
-        const stmt = db.prepare(`
+        const stmt = sqlite_db.prepare(`
       SELECT 
         DATE(created_at) as date,
         COUNT(*) as casesCreated,
@@ -1641,10 +1641,10 @@ export const reportOperations = {
     },
 
     getDashboardStats: () => {
-        const totalCases = db.prepare('SELECT COUNT(*) as count FROM cases').get().count;
-        const activeCases = db.prepare('SELECT COUNT(*) as count FROM cases WHERE status NOT IN ("closed", "dismissed")').get().count;
-        const pendingHearings = db.prepare('SELECT COUNT(*) as count FROM hearings WHERE status = "scheduled" AND date >= datetime("now")').get().count;
-        const documentsProcessed = db.prepare('SELECT COUNT(*) as count FROM documents').get().count;
+        const totalCases = sqlite_db.prepare('SELECT COUNT(*) as count FROM cases').get().count;
+        const activeCases = sqlite_db.prepare('SELECT COUNT(*) as count FROM cases WHERE status NOT IN ("closed", "dismissed")').get().count;
+        const pendingHearings = sqlite_db.prepare('SELECT COUNT(*) as count FROM hearings WHERE status = "scheduled" AND date >= datetime("now")').get().count;
+        const documentsProcessed = sqlite_db.prepare('SELECT COUNT(*) as count FROM documents').get().count;
         const aiQueriesHandled = 0; // Placeholder - implement if you have AI query tracking
 
         return {
@@ -1689,7 +1689,7 @@ export const searchOperations = {
 
         sql += ' ORDER BY c.updated_at DESC LIMIT 50';
 
-        const stmt = db.prepare(sql);
+        const stmt = sqlite_db.prepare(sql);
         const results = stmt.all(...params);
 
         return results.map(case_ => ({
@@ -1724,17 +1724,17 @@ export const searchOperations = {
             params.push(filters.caseId);
         }
 
-        if (filters.uploadedBy) {
+        if (filters.uploadesqlite_dby) {
             sql += ' AND d.uploaded_by = ?';
-            params.push(filters.uploadedBy);
+            params.push(filters.uploadesqlite_dby);
         }
 
         sql += ' ORDER BY d.uploaded_at DESC LIMIT 50';
 
-        const stmt = db.prepare(sql);
+        const stmt = sqlite_db.prepare(sql);
         const results = stmt.all(...params);
 
-        return results.map(doc => documentOperations.findById(doc.id));
+        return results.map(doc => documentOperations.finsqlite_dbyId(doc.id));
     },
 
     searchUsers: (query, filters = {}) => {
@@ -1761,10 +1761,10 @@ export const searchOperations = {
 
         sql += ' ORDER BY u.display_name ASC LIMIT 50';
 
-        const stmt = db.prepare(sql);
+        const stmt = sqlite_db.prepare(sql);
         const results = stmt.all(...params);
 
-        return results.map(user => userOperations.findById(user.id));
+        return results.map(user => userOperations.finsqlite_dbyId(user.id));
     }
 };
 
@@ -1772,7 +1772,7 @@ export const searchOperations = {
 export const bulkOperations = {
     createCases: (casesData) => {
         const results = [];
-        const transaction = db.transaction((cases) => {
+        const transaction = sqlite_db.transaction((cases) => {
             for (const caseData of cases) {
                 results.push(caseOperations.create(caseData));
             }
@@ -1783,17 +1783,17 @@ export const bulkOperations = {
     },
 
     updateCaseStatuses: (updates) => {
-        const transaction = db.transaction((statusUpdates) => {
-            const stmt = db.prepare('UPDATE cases SET status = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?');
+        const transaction = sqlite_db.transaction((statusUpdates) => {
+            const stmt = sqlite_db.prepare('UPDATE cases SET status = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?');
 
-            for (const { caseId, status, changedBy } of statusUpdates) {
+            for (const { caseId, status, changesqlite_dby } of statusUpdates) {
                 stmt.run(status, caseId);
 
                 // Record in status history
                 caseStatusHistoryOperations.create({
                     caseId,
                     newStatus: status,
-                    changedBy: changedBy || 'system'
+                    changesqlite_dby: changesqlite_dby || 'system'
                 });
             }
         });
@@ -1802,8 +1802,8 @@ export const bulkOperations = {
     },
 
     deleteDocuments: (documentIds) => {
-        const transaction = db.transaction((ids) => {
-            const stmt = db.prepare('DELETE FROM documents WHERE id = ?');
+        const transaction = sqlite_db.transaction((ids) => {
+            const stmt = sqlite_db.prepare('DELETE FROM documents WHERE id = ?');
             for (const id of ids) {
                 stmt.run(id);
             }
@@ -1815,47 +1815,47 @@ export const bulkOperations = {
 
 // Transaction wrapper for complex operations
 export const withTransaction = (callback) => {
-    const transaction = db.transaction(callback);
+    const transaction = sqlite_db.transaction(callback);
     return transaction;
 };
 
 // Database maintenance operations
 export const maintenanceOperations = {
     vacuum: () => {
-        db.exec('VACUUM');
+        sqlite_db.exec('VACUUM');
     },
 
     analyze: () => {
-        db.exec('ANALYZE');
+        sqlite_db.exec('ANALYZE');
     },
 
     integrity_check: () => {
-        const result = db.prepare('PRAGMA integrity_check').all();
+        const result = sqlite_db.prepare('PRAGMA integrity_check').all();
         return result;
     },
 
     backup: (backupPath) => {
-        const backup = db.backup(backupPath);
+        const backup = sqlite_db.backup(backupPath);
         return backup;
     },
 
     getTableInfo: (tableName) => {
-        const stmt = db.prepare('PRAGMA table_info(?)');
+        const stmt = sqlite_db.prepare('PRAGMA table_info(?)');
         return stmt.all(tableName);
     },
 
     getIndexes: (tableName) => {
-        const stmt = db.prepare('PRAGMA index_list(?)');
+        const stmt = sqlite_db.prepare('PRAGMA index_list(?)');
         return stmt.all(tableName);
     }
 };
 
 // Close database connection
 export const closeDatabase = () => {
-    db.close();
+    sqlite_db.close();
 };
 
 // Export the database instance for direct access if needed
-export { db };
+export { sqlite_db };
 
-export default db;
+export default sqlite_db;

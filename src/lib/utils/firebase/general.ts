@@ -1,19 +1,37 @@
-// src/lib/utils/general.ts
-import { randomUUID } from 'crypto';
-import { db } from '@/lib/database'; // Import our SQLite database instance
+
+// import { collection, , getDocs, doc, setDoc } from 'firebase/firestore';
+import {
+    collection,
+    doc,
+    addDoc,
+    setDoc,
+    getDoc,
+    getDocs,
+    limit,
+    query,
+    where,
+    deleteDoc
+} from "firebase/firestore";
+
+import { db } from '../../constants/firebase/config'
+
 
 // Helper function to remove undefined values from objects
 const removeUndefinedFields = (obj: any): any => {
     if (obj === null || obj === undefined || typeof obj !== 'object') {
         return obj;
     }
+
     if (Array.isArray(obj)) {
         return obj.map(item => removeUndefinedFields(item));
     }
+
     if (obj instanceof Date) {
         return obj;
     }
+
     const cleaned: any = {};
+
     for (const [key, value] of Object.entries(obj)) {
         if (value !== undefined) {
             if (value && typeof value === 'object' && !Array.isArray(value) && !(value instanceof Date)) {
@@ -27,50 +45,23 @@ const removeUndefinedFields = (obj: any): any => {
             }
         }
     }
+
     return cleaned;
 };
 
-// CRUD Operations using SQLite
+
 export async function uploadData(collectionName: string, data: any): Promise<boolean> {
-    let uploaded = false;
+    let uploaded = false
     try {
         // Clean the data before uploading
         const cleanedData = removeUndefinedFields(data);
-
-        // Map collection name to corresponding SQLite operation
-        switch (collectionName) {
-            case 'users':
-                await userOperations.create(cleanedData);
-                break;
-            case 'cases':
-                await caseOperations.create(cleanedData);
-                break;
-            case 'hearings':
-                await hearingOperations.create(cleanedData);
-                break;
-            case 'documents':
-                await documentOperations.create(cleanedData);
-                break;
-            case 'rulings':
-                await rulingOperations.create(cleanedData);
-                break;
-            case 'calendarEvents':
-                await calendarEventOperations.create(cleanedData);
-                break;
-            case 'notifications':
-                await notificationOperations.create(cleanedData);
-                break;
-            case 'auditLogs':
-                await auditLogOperations.create(cleanedData);
-                break;
-            default:
-                throw new Error(`Unsupported collection: ${collectionName}`);
-        }
-        uploaded = true;
+        const docRef = await addDoc(collection(db, collectionName), cleanedData);
+        uploaded = true
     } catch (e) {
         console.error("Error adding document: ", e);
     }
-    return uploaded;
+
+    return uploaded
 }
 
 export async function setDetails(item: any, collectionName: string, id: string | number) {
@@ -78,39 +69,14 @@ export async function setDetails(item: any, collectionName: string, id: string |
         console.error("Collection name or document ID is missing.");
         return { success: false, error: "Invalid collection name or document ID." };
     }
+
     try {
         // Clean the data before setting
         const cleanedItem = removeUndefinedFields(item);
 
-        // Map collection name to corresponding SQLite operation
-        switch (collectionName) {
-            case 'users':
-                await userOperations.update(id, cleanedItem);
-                break;
-            case 'cases':
-                await caseOperations.update(id, cleanedItem);
-                break;
-            case 'hearings':
-                await hearingOperations.update(id, cleanedItem);
-                break;
-            case 'documents':
-                await documentOperations.update(id, cleanedItem);
-                break;
-            case 'rulings':
-                await rulingOperations.update(id, cleanedItem);
-                break;
-            case 'calendarEvents':
-                await calendarEventOperations.update(id, cleanedItem);
-                break;
-            case 'notifications':
-                await notificationOperations.update(id, cleanedItem);
-                break;
-            case 'auditLogs':
-                await auditLogOperations.update(id, cleanedItem);
-                break;
-            default:
-                throw new Error(`Unsupported collection: ${collectionName}`);
-        }
+        const docRef = doc(db, collectionName, `${id}`);
+        await setDoc(docRef, cleanedItem);
+
         return { success: true, id };
     } catch (error) {
         if (error instanceof Error) {
@@ -123,8 +89,10 @@ export async function setDetails(item: any, collectionName: string, id: string |
     }
 }
 
+
+
 /**
- * Deletes a document from a specified collection in SQLite.
+ * Deletes a document from a specified collection in Firestore.
  * @param {string} collectionName - The name of the collection.
  * @param {string} documentId - The ID of the document to delete.
  * @returns {Promise<{ success: boolean, error?: string }>} - Result of the deletion operation.
@@ -140,149 +108,74 @@ export async function deleteData(
     }
 
     try {
-        // Map collection name to corresponding SQLite operation
-        switch (collectionName) {
-            case 'users':
-                await userOperations.delete(documentId);
-                break;
-            case 'cases':
-                await caseOperations.delete(documentId);
-                break;
-            case 'hearings':
-                await hearingOperations.delete(documentId);
-                break;
-            case 'documents':
-                await documentOperations.delete(documentId);
-                break;
-            case 'rulings':
-                await rulingOperations.delete(documentId);
-                break;
-            case 'calendarEvents':
-                await calendarEventOperations.delete(documentId);
-                break;
-            case 'notifications':
-                await notificationOperations.delete(documentId);
-                break;
-            case 'auditLogs':
-                await auditLogOperations.delete(documentId);
-                break;
-            default:
-                throw new Error(`Unsupported collection: ${collectionName}`);
-        }
+        // Get a reference to the document
+        const docRef = doc(db, collectionName, `${documentId}`);
+
+        // Delete the document
+        await deleteDoc(docRef);
+        console.log(`Document with ID "${documentId}" successfully deleted from collection "${collectionName}".`);
+
         return { success: true };
     } catch (error) {
         console.error("Error deleting document:", error);
+
         return {
             success: false,
-            error: error instanceof Error ? error.message : "Unknown error occurred."
+            error: error instanceof Error ? error.message : "Unknown error occurred.",
         };
     }
 }
 
+
 export async function fetchData(collectionName: string, count?: number) {
-    try {
-        // Map collection name to corresponding SQLite operation
-        let data: any[] = [];
+    const querySnapshot = await getDocs(collection(db, collectionName));
+    let data: any[] = [] //
 
-        switch (collectionName) {
-            case 'users':
-                data = await userOperations.findAll();
-                break;
-            case 'cases':
-                data = await caseOperations.findAll();
-                break;
-            case 'hearings':
-                data = await hearingOperations.findAll();
-                break;
-            case 'documents':
-                data = await documentOperations.findAll();
-                break;
-            case 'rulings':
-                data = await rulingOperations.findAll();
-                break;
-            case 'calendarEvents':
-                data = await calendarEventOperations.findAll();
-                break;
-            case 'notifications':
-                data = await notificationOperations.findAll();
-                break;
-            case 'auditLogs':
-                data = await auditLogOperations.findAll();
-                break;
-            default:
-                throw new Error(`Unsupported collection: ${collectionName}`);
-        }
-
-        return data;
-    } catch (error) {
-        console.error("Error getting documents:", error);
-        throw error;
+    if (count) {
+        // Speficify a count to the number of documents to fetch
+        const limitedQuery = query(collection(db, collectionName), limit(count));
+        const limitedSnapshot = await getDocs(limitedQuery);
+        limitedSnapshot.forEach((doc) => {
+            data.push(doc.data());
+        });
+    } else {
+        querySnapshot.forEach((doc) => {
+            // doc.data() is never undefined for query doc snapshots
+            // console.log(doc.id, " => ", doc.data());
+            data.push(doc.data())
+        });
     }
+    return data
 }
 
 export async function setDetailsOfMany(items: any[], collectionName: string) {
     let success = true;
     let errors: string[] = [];
 
-    try {
-        // Map collection name to corresponding SQLite operation
-        switch (collectionName) {
-            case 'users':
-                await userOperations.setDetailsOfMany(items, collectionName);
-                break;
-            case 'cases':
-                await caseOperations.setDetailsOfMany(items, collectionName);
-                break;
-            case 'hearings':
-                await hearingOperations.setDetailsOfMany(items, collectionName);
-                break;
-            case 'documents':
-                await documentOperations.setDetailsOfMany(items, collectionName);
-                break;
-            case 'rulings':
-                await rulingOperations.setDetailsOfMany(items, collectionName);
-                break;
-            case 'calendarEvents':
-                await calendarEventOperations.setDetailsOfMany(items, collectionName);
-                break;
-            case 'notifications':
-                await notificationOperations.setDetailsOfMany(items, collectionName);
-                break;
-            case 'auditLogs':
-                await auditLogOperations.setDetailsOfMany(items, collectionName);
-                break;
-            default:
-                throw new Error(`Unsupported collection: ${collectionName}`);
+    for (let i = 0; i < items.length; i++) {
+        const item = items[i];
+        const id = item.id;
+        const result = await setDetails(item, collectionName, id);
+
+        if (!result.success) {
+            success = false;
+            errors.push(result.error || "Unknown error occurred.");
         }
-    } catch (error) {
-        success = false;
-        errors.push(error instanceof Error ? error.message : "Unknown error occurred.");
     }
+
     return { success, errors };
 }
 
+
 export async function getOne(id: string | number, collectionName: string) {
+    // get one doc from the specified collection
     try {
-        // Map collection name to corresponding SQLite operation
-        switch (collectionName) {
-            case 'users':
-                return await userOperations.findById(id);
-            case 'cases':
-                return await caseOperations.findById(id);
-            case 'hearings':
-                return await hearingOperations.findById(id);
-            case 'documents':
-                return await documentOperations.findById(id);
-            case 'rulings':
-                return await rulingOperations.findById(id);
-            case 'calendarEvents':
-                return await calendarEventOperations.findById(id);
-            case 'notifications':
-                return await notificationOperations.findById(id);
-            case 'auditLogs':
-                return await auditLogOperations.findById(id);
-            default:
-                throw new Error(`Unsupported collection: ${collectionName}`);
+        const docRef = doc(db, collectionName, `${id}`);
+        const docSnap = await getDoc(docRef);
+        if (docSnap.exists()) {
+            return docSnap.data();
+        } else {
+            throw new Error("No such document!");
         }
     } catch (error) {
         console.error("Error getting document:", error);
@@ -291,28 +184,12 @@ export async function getOne(id: string | number, collectionName: string) {
 }
 
 export async function getLimitedMany(limitNumber: number, collectionName: string) {
+    // get a limited number of docs from the specified collection
     try {
-        // Map collection name to corresponding SQLite operation
-        switch (collectionName) {
-            case 'users':
-                return await userOperations.findLimited(limitNumber);
-            case 'cases':
-                return await caseOperations.findLimited(limitNumber);
-            case 'hearings':
-                return await hearingOperations.findLimited(limitNumber);
-            case 'documents':
-                return await documentOperations.findLimited(limitNumber);
-            case 'rulings':
-                return await rulingOperations.findLimited(limitNumber);
-            case 'calendarEvents':
-                return await calendarEventOperations.findLimited(limitNumber);
-            case 'notifications':
-                return await notificationOperations.findLimited(limitNumber);
-            case 'auditLogs':
-                return await auditLogOperations.findLimited(limitNumber);
-            default:
-                throw new Error(`Unsupported collection: ${collectionName}`);
-        }
+        const q = query(collection(db, collectionName), limit(limitNumber));
+        const querySnapshot = await getDocs(q);
+        const docs = querySnapshot.docs.map(doc => doc.data());
+        return docs;
     } catch (error) {
         console.error("Error getting documents:", error);
         throw error;
@@ -320,28 +197,11 @@ export async function getLimitedMany(limitNumber: number, collectionName: string
 }
 
 export async function getAll(collectionName: string) {
+    // get all docs from the specified collection
     try {
-        // Map collection name to corresponding SQLite operation
-        switch (collectionName) {
-            case 'users':
-                return await userOperations.findAll();
-            case 'cases':
-                return await caseOperations.findAll();
-            case 'hearings':
-                return await hearingOperations.findAll();
-            case 'documents':
-                return await documentOperations.findAll();
-            case 'rulings':
-                return await rulingOperations.findAll();
-            case 'calendarEvents':
-                return await calendarEventOperations.findAll();
-            case 'notifications':
-                return await notificationOperations.findAll();
-            case 'auditLogs':
-                return await auditLogOperations.findAll();
-            default:
-                throw new Error(`Unsupported collection: ${collectionName}`);
-        }
+        const querySnapshot = await getDocs(collection(db, collectionName));
+        const docs = querySnapshot.docs.map(doc => doc.data());
+        return docs;
     } catch (error) {
         console.error("Error getting documents:", error);
         throw error;
@@ -349,28 +209,12 @@ export async function getAll(collectionName: string) {
 }
 
 export async function getAllWhereEquals(collectionName: string, attributeName: string, value: any) {
+    // get all docs from the specified collection where attribute equals value
     try {
-        // Map collection name to corresponding SQLite operation
-        switch (collectionName) {
-            case 'users':
-                return await userOperations.findAllWhere(attributeName, value);
-            case 'cases':
-                return await caseOperations.findAllWhere(attributeName, value);
-            case 'hearings':
-                return await hearingOperations.findAllWhere(attributeName, value);
-            case 'documents':
-                return await documentOperations.findAllWhere(attributeName, value);
-            case 'rulings':
-                return await rulingOperations.findAllWhere(attributeName, value);
-            case 'calendarEvents':
-                return await calendarEventOperations.findAllWhere(attributeName, value);
-            case 'notifications':
-                return await notificationOperations.findAllWhere(attributeName, value);
-            case 'auditLogs':
-                return await auditLogOperations.findAllWhere(attributeName, value);
-            default:
-                throw new Error(`Unsupported collection: ${collectionName}`);
-        }
+        const q = query(collection(db, collectionName), where(attributeName, "==", value));
+        const querySnapshot = await getDocs(q);
+        const docs = querySnapshot.docs.map(doc => doc.data());
+        return docs;
     } catch (error) {
         console.error("Error getting documents:", error);
         throw error;

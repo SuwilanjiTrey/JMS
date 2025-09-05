@@ -19,7 +19,7 @@ export interface CaseStatusHistory {
 }
 
 // Event types for case timeline
-export type CaseEventType = 'status_change' | 'hearing' | 'document_upload' | 'ruling' | 'assignment' | 'note' | 'party_change';
+export type CaseEventType = 'status_change' | 'hearing' | 'document_upload' | 'ruling' | 'assignment' | 'note' | 'party_change' | 'process_stage';
 
 // Unified case event for timeline
 export interface CaseEvent {

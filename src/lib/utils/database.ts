@@ -120,3 +120,93 @@ const buildWhereClause = (conditions: WhereCondition[]): { clause: string; param
         params
     };
 };
+
+/**
+ * Advanced query function with multiple conditions
+ */
+export async function queryDocuments(
+    collectionName: string,
+    options: QueryOptions = {}
+): Promise<any[]> {
+    try {
+        createTableIfNotExists(collectionName);
+
+        let selectSQL = `SELECT data FROM ${collectionName}`;
+        const params: any[] = [];
+
+        // Build WHERE clause
+        if (options.where && options.where.length > 0) {
+            const { clause, params: whereParams } = buildWhereClause(options.where);
+            selectSQL += ` ${clause}`;
+            params.push(...whereParams);
+        }
+
+        // Add ORDER BY
+        if (options.orderBy) {
+            selectSQL += ` ORDER BY JSON_EXTRACT(data, '$.${options.orderBy.field}') ${options.orderBy.direction}`;
+        } else {
+            selectSQL += ` ORDER BY created_at DESC`;
+        }
+
+        // Add LIMIT and OFFSET
+        if (options.limit) {
+            selectSQL += ` LIMIT ?`;
+            params.push(options.limit);
+        }
+
+        if (options.offset) {
+            selectSQL += ` OFFSET ?`;
+            params.push(options.offset);
+        }
+
+        const stmt = sqlite_db.prepare(selectSQL);
+        const rows = stmt.all(...params);
+
+        return rows.map(row => parseJsonFields(JSON.parse((row as any).data)));
+    } catch (error) {
+        console.error("Error querying documents:", error);
+        throw error;
+    }
+}
+
+/**
+ * Count documents in a collection
+ */
+export async function countDocuments(
+    collectionName: string,
+    conditions?: WhereCondition[]
+): Promise<number> {
+    try {
+        createTableIfNotExists(collectionName);
+
+        let countSQL = `SELECT COUNT(*) as count FROM ${collectionName}`;
+        const params: any[] = [];
+
+        if (conditions && conditions.length > 0) {
+            const { clause, params: whereParams } = buildWhereClause(conditions);
+            countSQL += ` ${clause}`;
+            params.push(...whereParams);
+        }
+
+        const stmt = sqlite_db.prepare(countSQL);
+        const result = stmt.get(...params) as any;
+
+        return result.count;
+    } catch (error) {
+        console.error("Error counting documents:", error);
+        throw error;
+    }
+}
+
+/**
+ * Close database connection
+ */
+export function closeDatabase(): void {
+    sqlite_db.close();
+}
+
+// Export the database instance for advanced usage
+export { sqlite_db };
+
+// Export types for external use
+export type { WhereCondition, QueryOptions };

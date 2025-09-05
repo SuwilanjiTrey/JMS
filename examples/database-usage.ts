@@ -403,4 +403,4 @@ export {
 };
 
 // Uncomment the line below to run examples when this file is executed directly
-// runAllExamples().catch(console.error);
+runAllExamples().catch(console.error);

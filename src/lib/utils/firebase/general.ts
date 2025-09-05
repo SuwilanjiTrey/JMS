@@ -221,7 +221,7 @@ async function getAllWhereEquals(collectionName: string, attributeName: string, 
     }
 }
 
-
+/*
 export {
     uploadData,
     setDetails,
@@ -235,3 +235,4 @@ export {
     updateDocument,
     deleteMany
 } from '@/lib/database/crud';
+ */

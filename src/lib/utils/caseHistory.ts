@@ -1,58 +1,9 @@
-<<<<<<< HEAD
-<<<<<<< HEAD
-=======
->>>>>>> 2b0ef7e34493758c956b2369967a1941a17def83
-// In your lib/utils/caseHistory.ts file:
-import { uploadData } from './firebase/general';
-import { COLLECTIONS } from '@/lib/constants/firebase/collections';
-import type { CaseStatusHistory } from '@/models';
 
-export async function trackStatusChange(
-    caseId: string,
-    newStatus: string,
-    userId: string,
-    notes?: string,
-    previousStatus?: string
-): Promise<boolean> {
-    const statusHistory: CaseStatusHistory = {
-        id: `status_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
-        caseId,
-        status: newStatus as any,
-        changedBy: userId,
-        changedAt: new Date(),
-        notes,
-        previousStatus: previousStatus as any
-    };
-
-    return await uploadData(COLLECTIONS.CASE_STATUS_HISTORY, statusHistory);
-}
-
-export async function trackProcessStage(
-    caseId: string,
-    stage: string,
-    userId: string,
-    notes?: string,
-    documents?: string[]
-): Promise<boolean> {
-    const processStage = {
-        id: `stage_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
-        caseId,
-        stage: stage as any,
-        date: new Date(),
-        completedBy: userId,
-        notes,
-        documents
-    };
-
-    return await uploadData(COLLECTIONS.CASE_PROCESS_STAGES, processStage);
-<<<<<<< HEAD
-=======
-// Case History Management Utilities
 import {
     uploadData,
     setDetails,
     getAllWhereEquals,
-    getAll
+    getOne
 } from '@/lib/utils/firebase/general';
 import { COLLECTIONS } from '@/lib/constants/firebase/collections';
 import type {
@@ -144,6 +95,51 @@ export async function createTimelineEvent(
         console.error('Error creating timeline event:', error);
         return false;
     }
+}
+
+/**
+ * Legacy function for backward compatibility
+ * @deprecated Use createStatusHistory instead
+ */
+export async function trackStatusChange(
+    caseId: string,
+    newStatus: string,
+    userId: string,
+    notes?: string,
+    previousStatus?: string
+): Promise<boolean> {
+    return await createStatusHistory(
+        caseId,
+        previousStatus as CaseStatus,
+        newStatus as CaseStatus,
+        userId,
+        undefined, // reason
+        notes
+    );
+}
+
+/**
+ * Legacy function for tracking process stages
+ * @deprecated Use createTimelineEvent instead
+ */
+export async function trackProcessStage(
+    caseId: string,
+    stage: string,
+    userId: string,
+    notes?: string,
+    documents?: string[]
+): Promise<boolean> {
+    return await createTimelineEvent(
+        caseId,
+        'process_stage',
+        `Process Stage: ${stage}`,
+        notes || `Process stage ${stage} completed`,
+        userId,
+        {
+            stage,
+            documents: documents || []
+        }
+    );
 }
 
 /**
@@ -345,8 +341,8 @@ export async function updateCaseStatusWithHistory(
     notes?: string
 ): Promise<{ success: boolean; error?: string }> {
     try {
-        // First update the case status
-        const caseData = await import('@/lib/utils/firebase/general').then(m => m.getOne(caseId, COLLECTIONS.CASES));
+        // First get the current case data
+        const caseData = await getOne(caseId, COLLECTIONS.CASES);
 
         if (!caseData) {
             return { success: false, error: 'Case not found' };
@@ -522,7 +518,5 @@ export async function generateCaseHistoryReport(caseId: string): Promise<{
             timeline: []
         };
     }
->>>>>>> a0af6fa6dce3584581274ea880ddffa33bcbc4ba
-=======
->>>>>>> 2b0ef7e34493758c956b2369967a1941a17def83
+
 }

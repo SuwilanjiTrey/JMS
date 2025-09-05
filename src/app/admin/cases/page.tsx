@@ -324,13 +324,13 @@ export default function AdminCases({
     setSelectedCase(null);
   };
 
-  // Resolved updateCaseStatus function combining both approaches
+  // Enhanced status update with history tracking
   const updateCaseStatus = async (caseId: string, newStatus: CaseStatus) => {
     setSubmitting(true);
     try {
       const caseToUpdate = cases.find(c => c.id === caseId);
       if (!caseToUpdate) return;
-
+      
       const previousStatus = caseToUpdate.status;
       
       // Use the enhanced status update function that handles history tracking

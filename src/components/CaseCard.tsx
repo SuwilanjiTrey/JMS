@@ -2,31 +2,6 @@ import { useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-<<<<<<< HEAD
-<<<<<<< HEAD
-=======
->>>>>>> 2b0ef7e34493758c956b2369967a1941a17def83
-import { Calendar, Clock, User, FileText, MoreHorizontal, Eye, Edit, History } from 'lucide-react';
-import { Case, CaseStatus, CasePriority, CaseType } from '@/models';
-import { format } from 'date-fns';
-
-interface CaseCardProps {
-  caseData: Case;
-  onView?: (caseId: string) => void;
-  onEdit?: (caseId: string) => void;
-  showActions?: boolean;
-  compact?: boolean;
-  onViewHistory: (caseItem: Case) => void;
-}
-
-export default function CaseCard({ 
-  caseData, 
-  onView, 
-  onEdit, 
-  onViewHistory,
-  showActions = true, 
-  compact = false 
-=======
 import {
   Eye,
   Edit2,
@@ -133,7 +108,6 @@ export default function CaseCard({
   submitting,
   config,
   customActions = []
->>>>>>> a0af6fa6dce3584581274ea880ddffa33bcbc4ba
 }: CaseCardProps) {
   const [showHistoryDialog, setShowHistoryDialog] = useState(false);
 
@@ -357,26 +331,6 @@ export default function CaseCard({
               </div>
             </div>
           )}
-<<<<<<< HEAD
-<<<<<<< HEAD
-=======
->>>>>>> 2b0ef7e34493758c956b2369967a1941a17def83
-          {/** Div that centers its children */}
-          <div className="flex justify-center">
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => onViewHistory(caseData)}
-              className="flex items-center gap-1"
-            >
-              <History className="w-4 h-4" />
-              <span className="hidden sm:inline">History</span>
-            </Button>
-          </div>
-        </div>
-      </CardContent>
-    </Card>
-=======
         </CardContent>
       </Card>
 
@@ -391,6 +345,5 @@ export default function CaseCard({
         />
       )}
     </>
->>>>>>> a0af6fa6dce3584581274ea880ddffa33bcbc4ba
   );
 }

@@ -22,7 +22,7 @@ export interface CaseStatusHistory {
 }
 
 // Event types for case timeline
-export type CaseEventType = 'status_change' | 'hearing' | 'document_upload' | 'ruling' | 'assignment' | 'note' | 'party_change';
+export type CaseEventType = 'status_change' | 'hearing' | 'document_upload' | 'ruling' | 'assignment' | 'note' | 'party_change' | 'process_stage';
 
 // Unified case event for timeline
 export interface CaseEvent {
@@ -212,6 +212,7 @@ export const CASE_TYPE_LABELS: Record<CaseType, string> = {
 };
 
 
+
 export interface CaseProcessStage {
   id: string;
   caseId: string;
@@ -230,4 +231,5 @@ export type CaseProcessStageType =
   | 'adjournment'
   | 'ruling'
   | 'appeal';
+
 

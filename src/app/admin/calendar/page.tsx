@@ -653,7 +653,7 @@ export default function AdminCalendar({
           <p className="text-zambia-black/70">Manage court schedules and hearings</p>
         </div>
         <Button 
-          className="bg-zambia-orange hover:bg-zambia-orange/90 w-full sm:w-auto"
+          className="bg-orange-600 hover:bg-orange-700 w-full sm:w-auto"
           onClick={() => setShowScheduleModal(true)}
         >
           Schedule Hearing

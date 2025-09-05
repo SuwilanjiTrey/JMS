@@ -1,7 +1,5 @@
 //cases module - Mobile-friendly and Modular
-
 'use client';
-
 import { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -28,7 +26,6 @@ import {
   Trash2,
   Filter,
   MoreVertical,
-
   History,
   MoreHorizontal
 } from 'lucide-react';
@@ -47,10 +44,8 @@ import {
   deleteData
 } from '@/lib/utils/firebase/general';
 import { COLLECTIONS } from '@/lib/constants/firebase/collections';
-
 // Import case history timeline component
 import CaseHistoryTimeline from '../CaseHistoryTimeline';
-
 // Configuration interface for customization
 interface CasesModuleConfig {
   enableFilters?: boolean;
@@ -72,7 +67,6 @@ interface CasesModuleConfig {
   enableCaseViewing?: boolean;
   enableStatusUpdates?: boolean;
 }
-
 interface CasesModuleProps {
   config?: CasesModuleConfig;
   onCaseSelect?: (caseItem: Case) => void;
@@ -91,7 +85,6 @@ interface CasesModuleProps {
     variant?: 'default' | 'outline' | 'destructive';
   }>;
 }
-
 // Default configuration
 export const defaultConfig: CasesModuleConfig = {
   enableFilters: true,
@@ -113,7 +106,6 @@ export const defaultConfig: CasesModuleConfig = {
   enableCaseViewing: true,
   enableStatusUpdates: true,
 };
-
 // Additional case status colors and labels for history integration
 const CASE_STATUS_LABELS = {
   draft: 'Draft',
@@ -130,7 +122,6 @@ const CASE_STATUS_LABELS = {
   ruling: 'Ruling',
   appeal: 'Appeal'
 };
-
 // Mobile-optimized Filter Panel Component
 const MobileFilterPanel = ({
   searchTerm,
@@ -149,14 +140,12 @@ const MobileFilterPanel = ({
     priority: priorityFilter,
     type: typeFilter
   });
-
   const applyFilters = () => {
     setStatusFilter(localFilters.status);
     setPriorityFilter(localFilters.priority);
     setTypeFilter(localFilters.type);
     setIsOpen(false);
   };
-
   const clearFilters = () => {
     const cleared = { status: 'all', priority: 'all', type: 'all' };
     setLocalFilters(cleared);
@@ -165,7 +154,6 @@ const MobileFilterPanel = ({
     setTypeFilter('all');
     setIsOpen(false);
   };
-
   return (
     <Dialog open={isOpen} onOpenChange={setIsOpen}>
       <DialogContent className="w-[95vw] max-w-md">
@@ -192,7 +180,6 @@ const MobileFilterPanel = ({
               </SelectContent>
             </Select>
           </div>
-
           <div className="space-y-2">
             <Label>Priority</Label>
             <Select value={localFilters.priority} onValueChange={(value) =>
@@ -210,7 +197,6 @@ const MobileFilterPanel = ({
               </SelectContent>
             </Select>
           </div>
-
           <div className="space-y-2">
             <Label>Type</Label>
             <Select value={localFilters.type} onValueChange={(value) =>
@@ -227,7 +213,6 @@ const MobileFilterPanel = ({
               </SelectContent>
             </Select>
           </div>
-
           <div className="flex gap-2 pt-4">
             <Button variant="outline" onClick={clearFilters} className="flex-1">
               Clear
@@ -242,27 +227,13 @@ const MobileFilterPanel = ({
   );
 };
 
-<<<<<<< HEAD
-// Mobile-optimized Case Card Component
-<<<<<<< HEAD
-=======
 // Enhanced Mobile-optimized Case Card Component with Case History Integration
->>>>>>> a0af6fa6dce3584581274ea880ddffa33bcbc4ba
-=======
->>>>>>> 2b0ef7e34493758c956b2369967a1941a17def83
 const CaseCard = ({
   caseItem,
   onView,
   onEdit,
   onStatusUpdate,
-<<<<<<< HEAD
-<<<<<<< HEAD
   onViewHistory,  
-=======
->>>>>>> a0af6fa6dce3584581274ea880ddffa33bcbc4ba
-=======
-  onViewHistory,  
->>>>>>> 2b0ef7e34493758c956b2369967a1941a17def83
   submitting,
   config,
   customActions = []
@@ -283,7 +254,6 @@ const CaseCard = ({
 }) => {
   const [showMobileActions, setShowMobileActions] = useState(false);
   const [showHistoryDialog, setShowHistoryDialog] = useState(false);
-
   // Helper functions from the history integration
   const formatDate = (date: Date | string) => {
     const d = typeof date === 'string' ? new Date(date) : date;
@@ -293,25 +263,21 @@ const CaseCard = ({
       year: 'numeric'
     }).format(d);
   };
-
   const getTimeAgo = (date: Date | string) => {
     const d = typeof date === 'string' ? new Date(date) : date;
     const now = new Date();
     const diffInMs = now.getTime() - d.getTime();
     const diffInDays = Math.floor(diffInMs / (1000 * 60 * 60 * 24));
-
     if (diffInDays === 0) return 'Today';
     if (diffInDays === 1) return 'Yesterday';
     if (diffInDays < 7) return `${diffInDays} days ago`;
     if (diffInDays < 30) return `${Math.floor(diffInDays / 7)} weeks ago`;
     return `${Math.floor(diffInDays / 30)} months ago`;
   };
-
   const isOverdue = (date?: Date) => {
     if (!date) return false;
     return new Date(date) < new Date();
   };
-
   return (
     <>
       <Card className="hover:shadow-md transition-all duration-200 bg-white border-l-4 border-l-blue-500">
@@ -341,7 +307,6 @@ const CaseCard = ({
               </Badge>
             </div>
           </div>
-
           {/* Case Type Badge */}
           <div className="flex flex-wrap gap-2">
             <Badge variant="secondary" className="text-xs">
@@ -349,7 +314,6 @@ const CaseCard = ({
             </Badge>
           </div>
         </CardHeader>
-
         <CardContent className="space-y-4">
           {/* Case Metrics - Mobile Optimized */}
           {config.showCaseMetrics && (
@@ -359,7 +323,6 @@ const CaseCard = ({
                 <span className="text-gray-600 truncate">Type:</span>
                 <span className="font-medium truncate">{CASE_TYPE_LABELS[caseItem.type]}</span>
               </div>
-
               <div className="flex items-center gap-1 p-2 bg-gray-50 rounded">
                 <Calendar className="w-3 h-3 text-gray-400 flex-shrink-0" />
                 <span className="text-gray-600 truncate">Created:</span>
@@ -370,7 +333,6 @@ const CaseCard = ({
                   })}
                 </span>
               </div>
-
               <div className="flex items-center gap-1 p-2 bg-gray-50 rounded">
                 <Users className="w-3 h-3 text-gray-400 flex-shrink-0" />
                 <span className="text-gray-600 truncate">Parties:</span>
@@ -378,7 +340,6 @@ const CaseCard = ({
                   {caseItem.plaintiffs.length + caseItem.defendants.length}
                 </span>
               </div>
-
               <div className="flex items-center gap-1 p-2 bg-gray-50 rounded">
                 <FileText className="w-3 h-3 text-gray-400 flex-shrink-0" />
                 <span className="text-gray-600 truncate">Docs:</span>
@@ -386,7 +347,6 @@ const CaseCard = ({
               </div>
             </div>
           )}
-
           {/* Next Hearing - Enhanced from history integration */}
           {caseItem.nextHearingDate && (
             <div className={`p-2.5 rounded-lg border ${isOverdue(caseItem.nextHearingDate)
@@ -406,7 +366,6 @@ const CaseCard = ({
               </div>
             </div>
           )}
-
           {/* Case Timeline Info - From history integration */}
           <div className="pt-2 border-t">
             <div className="flex items-center justify-between text-xs text-gray-500">
@@ -419,7 +378,6 @@ const CaseCard = ({
               )}
             </div>
           </div>
-
           {/* Mobile Actions */}
           <div className="flex flex-col gap-2">
             {/* Primary Actions Row - Always visible */}
@@ -435,7 +393,6 @@ const CaseCard = ({
                   <span className="hidden xs:inline">View</span>
                 </Button>
               )}
-
               {config.showCaseHistory && (
                 <Button
                   size="sm"
@@ -447,7 +404,6 @@ const CaseCard = ({
                   <span className="hidden xs:inline">History</span>
                 </Button>
               )}
-
               {config.enableCaseEditing && (
                 <Button
                   size="sm"
@@ -464,7 +420,6 @@ const CaseCard = ({
                   <span className="hidden xs:inline">Edit</span>
                 </Button>
               )}
-
               {/* Mobile Menu for Additional Actions */}
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
@@ -499,7 +454,6 @@ const CaseCard = ({
                 </DropdownMenuContent>
               </DropdownMenu>
             </div>
-
             {/* Quick Status Update - Enhanced from history integration */}
             {config.enableStatusUpdates && (
               <div className="pt-2 border-t">
@@ -526,7 +480,6 @@ const CaseCard = ({
                 </div>
               </div>
             )}
-
             {/* Status Update - Desktop Only */}
             {config.enableStatusUpdate && (
               <div className="hidden md:block">
@@ -551,104 +504,6 @@ const CaseCard = ({
           </div>
         </CardContent>
       </Card>
-
-<<<<<<< HEAD
-        {/* Mobile Actions */}
-        <div className="flex flex-col gap-2">
-          {/* Primary Actions Row - Always visible */}
-          <div className="flex gap-2">
-            <Button
-              size="sm"
-              variant="outline"
-              onClick={() => onView(caseItem)}
-              className="flex-1 text-xs"
-            >
-              <Eye className="w-3 h-3 mr-1" />
-              <span className="hidden xs:inline">View</span>
-            </Button>
-            {config.enableCaseEditing && (
-              <Button
-                size="sm"
-                variant="outline"
-                onClick={() => onEdit(caseItem)}
-                className="flex-1 text-xs"
-              >
-                <Edit2 className="w-3 h-3 mr-1" />
-                <span className="hidden xs:inline">Edit</span>
-              </Button>
-            )}
-
-            {/* Mobile Menu for Additional Actions */}
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button size="sm" variant="outline" className="px-2">
-                  <MoreVertical className="w-3 h-3" />
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="w-48">
-                {config.enableStatusUpdate && (
-                  <>
-                    <DropdownMenuItem onClick={() => onStatusUpdate(caseItem.id, 'active')}>
-                      Set to Active
-                    </DropdownMenuItem>
-                    <DropdownMenuItem onClick={() => onStatusUpdate(caseItem.id, 'pending')}>
-                      Set to Pending
-                    </DropdownMenuItem>
-                    <DropdownMenuItem onClick={() => onStatusUpdate(caseItem.id, 'closed')}>
-                      Set to Closed
-                    </DropdownMenuItem>
-                  </>
-                )}
-                {customActions.map((action, index) => (
-                  <DropdownMenuItem
-                    key={index}
-                    onClick={() => action.action(caseItem)}
-                    className={action.variant === 'destructive' ? 'text-red-600' : ''}
-                  >
-                    {action.icon && <action.icon className="w-4 h-4 mr-2" />}
-                    {action.label}
-                  </DropdownMenuItem>
-                ))}
-              </DropdownMenuContent>
-            </DropdownMenu>
-          </div>
-
-          {/* Status Update - Desktop Only */}
-          {config.enableStatusUpdate && (
-            <div className="hidden md:block">
-              <Select
-                onValueChange={(value: CaseStatus) => onStatusUpdate(caseItem.id, value)}
-                disabled={submitting}
-              >
-                <SelectTrigger className="w-full text-xs">
-                  <SelectValue placeholder="Update Status" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="draft">Set to Draft</SelectItem>
-                  <SelectItem value="active">Set to Active</SelectItem>
-                  <SelectItem value="pending">Set to Pending</SelectItem>
-                  <SelectItem value="closed">Set to Closed</SelectItem>
-                  <SelectItem value="appealed">Set to Appealed</SelectItem>
-                  <SelectItem value="dismissed">Set to Dismissed</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-          )}
-        </div>
-        <div className="flex justify-center">
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => onViewHistory(caseItem)}
-            className="flex items-center gap-1"
-          >
-            <History className="w-4 h-4" />
-            <span className="hidden sm:inline">History</span>
-          </Button>
-        </div>
-      </CardContent>
-    </Card>
-=======
       {/* Case History Timeline Dialog - Integrated from history module */}
       {config.showCaseHistory && (
         <CaseHistoryTimeline
@@ -660,10 +515,8 @@ const CaseCard = ({
         />
       )}
     </>
->>>>>>> a0af6fa6dce3584581274ea880ddffa33bcbc4ba
   );
 };
-
 // Party Form Component
 const PartyFormSection = ({
   parties,
@@ -696,9 +549,7 @@ const PartyFormSection = ({
       border: 'border-red-200'
     }
   };
-
   const scheme = colors[colorScheme];
-
   return (
     <div className="space-y-3">
       <div className="flex items-center justify-between">
@@ -715,7 +566,6 @@ const PartyFormSection = ({
           Add
         </Button>
       </div>
-
       <div className="space-y-2">
         {parties.map((party, index) => (
           <Card key={index} className={`p-3 ${scheme.cardBg} ${scheme.border}`}>
@@ -758,12 +608,9 @@ const PartyFormSection = ({
     </div>
   );
 };
-
 // Main Cases Module Component - This would continue with your existing implementation
 // The enhanced CaseCard component above now includes all case history functionality
-
 // Export additional components for external use
 export { CaseCard, PartyFormSection, MobileFilterPanel };
-
 // Export configuration interface for TypeScript users
 export type { CasesModuleConfig, CasesModuleProps };

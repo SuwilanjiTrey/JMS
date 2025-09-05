@@ -21,33 +21,58 @@ export default function LoginPage() {
   const { login } = useAuth();
   const router = useRouter();
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setIsLoading(true);
-    setError('');
-
-    try {
-      const user = await login(email, password);
-      console.log("DEBUG — user after login:", user);
-      
-      // Determine dashboard path based on role and admin subtype
-      const dashboardPath = getDashboardPath(user.role, user.profile?.adminType);
-      console.log("DEBUG — dashboardPath:", dashboardPath);
-      
-      router.push(dashboardPath);
-    } catch (error: any) {
-      console.error('Login error:', error);
-      setError(
-        error.message || 
-        'Invalid email or password. Please check your credentials and try again.'
-      );
-    } finally {
-      setIsLoading(false);
+// app/login/page.tsx
+// Update the handleSubmit function
+const handleSubmit = async (e: React.FormEvent) => {
+  e.preventDefault();
+  setIsLoading(true);
+  setError('');
+  try {
+    const user = await login(email, password);
+    console.log("DEBUG — user after login:", user);
+    
+    // Store user in localStorage for demo users
+    if (user.id.startsWith('demo-')) {
+      localStorage.setItem('user', JSON.stringify(user));
+      localStorage.setItem('token', 'demo-token');
+    } else {
+      // For real Firebase users, store the user and get the token
+      localStorage.setItem('user', JSON.stringify(user));
+      // In a real app, you would get the Firebase token here
+      localStorage.setItem('token', 'firebase-token');
     }
-  };
+    
+    // Determine dashboard path based on role and admin subtype
+    const dashboardPath = getDashboardPath(user.role, user.profile?.adminType);
+    console.log("DEBUG — dashboardPath:", dashboardPath);
+    
+    router.push(dashboardPath);
+  } catch (error: any) {
+    console.error('Login error:', error);
+    setError(
+      error.message || 
+      'Invalid email or password. Please check your credentials and try again.'
+    );
+  } finally {
+    setIsLoading(false);
+  }
+};
 
+// Update the getDashboardPath function in LoginPage
 const getDashboardPath = (role: UserRole, adminType?: string): string => {
   console.log('DEBUG - getDashboardPath called with:', { role, adminType });
+  
+  // Handle registrar and clerk roles
+  if (role === 'admin' && adminType) {
+    if (adminType === 'registrar') {
+      console.log('DEBUG - Redirecting registrar to /registrars');
+      return '/registrars/dashboard';
+    }
+    if (adminType === 'clerk') {
+      console.log('DEBUG - Redirecting clerk to /clerk');
+      return '/clerk/dashboard';
+    }
+  }
   
   switch (role) {
     case 'admin':
@@ -89,46 +114,60 @@ const getDashboardPath = (role: UserRole, adminType?: string): string => {
       return '/';
   }
 };
-  const getRoleBadgeColor = (role: UserRole) => {
-    switch (role) {
-      case 'admin':
-        return 'bg-red-100 text-red-800 hover:bg-red-200';
-      case 'judge':
-        return 'bg-blue-100 text-blue-800 hover:bg-blue-200';
-      case 'lawyer':
-        return 'bg-green-100 text-green-800 hover:bg-green-200';
-      case 'public':
-        return 'bg-purple-100 text-purple-800 hover:bg-purple-200';
-      case 'law-firm-admin':
-        return 'bg-orange-100 text-orange-800 hover:bg-orange-200';
-      case 'court-admin':
-        return 'bg-indigo-100 text-indigo-800 hover:bg-indigo-200';
-      default:
-        return 'bg-gray-100 text-gray-800 hover:bg-gray-200';
-    }
-  };
 
-  const handleDemoLogin = async (role: UserRole) => {
-    const credential = demoCredentials.find(c => c.role === role);
-    if (credential) {
-      setEmail(credential.email);
-      setPassword(credential.password);
-      setError('');
+
+// Update the getRoleBadgeColor function in LoginPage
+const getRoleBadgeColor = (role: UserRole) => {
+  switch (role) {
+    case 'admin':
+      return 'bg-red-100 text-red-800 hover:bg-red-200';
+    case 'judge':
+      return 'bg-blue-100 text-blue-800 hover:bg-blue-200';
+    case 'lawyer':
+      return 'bg-green-100 text-green-800 hover:bg-green-200';
+    case 'public':
+      return 'bg-purple-100 text-purple-800 hover:bg-purple-200';
+    case 'law-firm-admin':
+      return 'bg-orange-100 text-orange-800 hover:bg-orange-200';
+    case 'court-admin':
+      return 'bg-indigo-100 text-indigo-800 hover:bg-indigo-200';
+    case 'registrar':
+      return 'bg-yellow-100 text-yellow-800 hover:bg-yellow-200';
+    case 'clerk':
+      return 'bg-pink-100 text-pink-800 hover:bg-pink-200';
+    default:
+      return 'bg-gray-100 text-gray-800 hover:bg-gray-200';
+  }
+};
+
+
+const handleDemoLogin = async (role: UserRole) => {
+  const credential = demoCredentials.find(c => c.role === role);
+  if (credential) {
+    setEmail(credential.email);
+    setPassword(credential.password);
+    setError('');
+    
+    // Auto-login with demo credentials
+    setIsLoading(true);
+    try {
+      const user = await login(credential.email, credential.password);
       
-      // Auto-login with demo credentials
-      setIsLoading(true);
-      try {
-        const user = await login(credential.email, credential.password);
-        const dashboardPath = getDashboardPath(user.role, user.profile?.adminType);
-        router.push(dashboardPath);
-      } catch (error: any) {
-        console.error('Demo login error:', error);
-        setError('Demo login failed. Please try again.');
-      } finally {
-        setIsLoading(false);
-      }
+      // Store user in localStorage
+      localStorage.setItem('user', JSON.stringify(user));
+      localStorage.setItem('token', 'demo-token');
+      localStorage.setItem('isDemoUser', 'true');
+      
+      const dashboardPath = getDashboardPath(user.role, user.profile?.adminType);
+      router.push(dashboardPath);
+    } catch (error: any) {
+      console.error('Demo login error:', error);
+      setError('Demo login failed. Please try again.');
+    } finally {
+      setIsLoading(false);
     }
-  };
+  }
+};
 
   const handleSignUpClick = () => {
     router.push('/registration');

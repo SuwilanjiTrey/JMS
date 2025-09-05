@@ -1,4 +1,7 @@
 <<<<<<< HEAD
+<<<<<<< HEAD
+=======
+>>>>>>> 2b0ef7e34493758c956b2369967a1941a17def83
 // In your lib/utils/caseHistory.ts file:
 import { uploadData } from './firebase/general';
 import { COLLECTIONS } from '@/lib/constants/firebase/collections';
@@ -42,6 +45,7 @@ export async function trackProcessStage(
     };
 
     return await uploadData(COLLECTIONS.CASE_PROCESS_STAGES, processStage);
+<<<<<<< HEAD
 =======
 // Case History Management Utilities
 import {
@@ -519,4 +523,6 @@ export async function generateCaseHistoryReport(caseId: string): Promise<{
         };
     }
 >>>>>>> a0af6fa6dce3584581274ea880ddffa33bcbc4ba
+=======
+>>>>>>> 2b0ef7e34493758c956b2369967a1941a17def83
 }

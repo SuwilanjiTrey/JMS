@@ -7,6 +7,8 @@ export type UserRole =
   | 'judge'
   | 'lawyer'
   | 'public'
+  | 'clerk'
+  | 'registrar'
   | CourtType;
 
 export interface Role {

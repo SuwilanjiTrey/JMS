@@ -1,6 +1,5 @@
 // Updated main cases component with history integration
 'use client';
-
 import { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -37,7 +36,6 @@ import {
   deleteData,
 } from '@/lib/utils/firebase/general';
 import { COLLECTIONS } from '@/lib/constants/firebase/collections';
-
 // Import history utilities
 import {
   createStatusHistory,
@@ -45,7 +43,6 @@ import {
   updateCaseStatusWithHistory,
   CaseHistoryHelpers
 } from '@/lib/utils/caseHistory';
-
 import { CaseCard, PartyFormSection, MobileFilterPanel } from '@/components/exports/cases_module';
 import type { CasesModuleConfig, CasesModuleProps } from '@/components/exports/cases_module';
 import { defaultConfig } from '@/components/exports/cases_module';
@@ -70,7 +67,6 @@ export default function AdminCases({
     // Enable case history by default
     showCaseHistory: config.showCaseHistory !== false
   };
-
   const [cases, setCases] = useState<Case[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
@@ -88,7 +84,7 @@ export default function AdminCases({
   const [showHistoryDialog, setShowHistoryDialog] = useState(false);
   const [selectedCaseForHistory, setSelectedCaseForHistory] = useState<Case | null>(null);
   const [processStages, setProcessStages] = useState<CaseProcessStage[]>([]);
-
+  
   // Case form state
   const [caseForm, setCaseForm] = useState<CaseCreationData & { id?: string }>({
     title: '',
@@ -150,14 +146,12 @@ export default function AdminCases({
       constitutional: 'CN',
       other: 'OT'
     };
-
     const currentYear = new Date().getFullYear();
     const existingCases = cases.filter(c =>
       c.type === type &&
       c.caseNumber.includes(`${currentYear}`)
     );
     const nextNumber = existingCases.length + 1;
-
     return `${typePrefix[type]}-${currentYear}-${nextNumber.toString().padStart(3, '0')}`;
   };
 
@@ -166,16 +160,13 @@ export default function AdminCases({
       setError('Please fill in all required fields (Title and Description)');
       return;
     }
-
     if (caseForm.plaintiffs.some(p => !p.name.trim()) || caseForm.defendants.some(d => !d.name.trim())) {
       setError('All party names must be filled in');
       return;
     }
-
     setSubmitting(true);
     setError(null);
     setSuccess(null);
-
     try {
       if (isEditing && caseForm.id) {
         // Update existing case
@@ -197,16 +188,13 @@ export default function AdminCases({
           estimatedDuration: caseForm.estimatedDuration,
           updatedAt: new Date()
         };
-
         const result = await setDetails(updatedCase, COLLECTIONS.CASES, caseForm.id);
-
         if (result.success) {
           setCases(prev => prev.map(c => c.id === caseForm.id ? updatedCase : c));
           setSuccess('Case updated successfully!');
           setShowCaseDialog(false);
           onCaseUpdate?.(updatedCase);
           resetForm();
-
           // Create timeline event for case update
           await createTimelineEvent(
             caseForm.id,
@@ -226,7 +214,6 @@ export default function AdminCases({
         // Create new case
         const caseId = `case_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
         const caseNumber = generateCaseNumber(caseForm.type);
-
         const newCase: Case = {
           id: caseId,
           caseNumber,
@@ -255,16 +242,13 @@ export default function AdminCases({
           statusHistory: [],
           timeline: []
         };
-
         const success = await setDetails(newCase, COLLECTIONS.CASES, newCase.id);
-
         if (success) {
           setCases(prev => [...prev, newCase]);
           setSuccess('Case created successfully!');
           setShowCaseDialog(false);
           onCaseCreate?.(newCase);
           resetForm();
-
           // Create initial status history and timeline event
           await createStatusHistory(
             caseId,
@@ -273,7 +257,6 @@ export default function AdminCases({
             'current_user_id', // Replace with actual user ID
             'Initial case filing'
           );
-
           // Add parties to timeline
           for (const plaintiff of caseForm.plaintiffs) {
             await CaseHistoryHelpers.onPartyChange(
@@ -284,7 +267,6 @@ export default function AdminCases({
               'current_user_id'
             );
           }
-
           for (const defendant of caseForm.defendants) {
             await CaseHistoryHelpers.onPartyChange(
               caseId,
@@ -342,37 +324,16 @@ export default function AdminCases({
     setSelectedCase(null);
   };
 
-<<<<<<< HEAD
-  // In your cases page, update the updateCaseStatus function:
-=======
-  // Enhanced status update with history tracking
->>>>>>> a0af6fa6dce3584581274ea880ddffa33bcbc4ba
+  // Resolved updateCaseStatus function combining both approaches
   const updateCaseStatus = async (caseId: string, newStatus: CaseStatus) => {
     setSubmitting(true);
     try {
       const caseToUpdate = cases.find(c => c.id === caseId);
       if (!caseToUpdate) return;
 
-<<<<<<< HEAD
-      // Track the status change in history
-      await trackStatusChange(
-        caseId,
-        newStatus,
-        'current_user_id', // Replace with actual user ID
-        `Status changed from ${caseToUpdate.status} to ${newStatus}`,
-        caseToUpdate.status
-      );
-
-      const updatedCase = {
-        ...caseToUpdate,
-        status: newStatus,
-        updatedAt: new Date()
-      };
-=======
       const previousStatus = caseToUpdate.status;
->>>>>>> a0af6fa6dce3584581274ea880ddffa33bcbc4ba
-
-      // Use the enhanced status update function
+      
+      // Use the enhanced status update function that handles history tracking
       const result = await updateCaseStatusWithHistory(
         caseId,
         previousStatus,
@@ -381,7 +342,7 @@ export default function AdminCases({
         `Status updated via case management interface`,
         `Case status changed from ${previousStatus} to ${newStatus}`
       );
-
+      
       if (result.success) {
         // Update local state
         const updatedCase = {
@@ -389,7 +350,6 @@ export default function AdminCases({
           status: newStatus,
           updatedAt: new Date()
         };
-
         setCases(prev => prev.map(c => c.id === caseId ? updatedCase : c));
         setSuccess(`Case status updated to ${CASE_STATUS_LABELS[newStatus]}!`);
         onCaseUpdate?.(updatedCase);
@@ -403,6 +363,7 @@ export default function AdminCases({
       setSubmitting(false);
     }
   };
+
   const addParty = (type: 'plaintiffs' | 'defendants') => {
     setCaseForm(prev => ({
       ...prev,
@@ -433,16 +394,13 @@ export default function AdminCases({
     const matchesStatus = statusFilter === 'all' || caseItem.status === statusFilter;
     const matchesPriority = priorityFilter === 'all' || caseItem.priority === priorityFilter;
     const matchesType = typeFilter === 'all' || caseItem.type === typeFilter;
-
     return matchesSearch && matchesStatus && matchesPriority && matchesType;
   });
-
 
   const viewCaseDetails = async (caseItem: Case) => {
     setSelectedCase(caseItem);
     setShowDetailsDialog(true);
     onCaseSelect?.(caseItem);
-
     // Fetch process stages for this case
     try {
       const stages = await getAllWhereEquals(
@@ -466,7 +424,6 @@ export default function AdminCases({
     setSelectedCaseForHistory(caseItem);
     setShowHistoryDialog(true);
   };
-
 
   return (
     <div className="w-full max-w-7xl mx-auto p-3 sm:p-6 space-y-4 sm:space-y-6">
@@ -501,7 +458,6 @@ export default function AdminCases({
           <AlertDescription className="text-green-800">{success}</AlertDescription>
         </Alert>
       )}
-
       {error && (
         <Alert className="border-red-200 bg-red-50">
           <AlertCircle className="h-4 w-4 text-red-600" />
@@ -525,7 +481,6 @@ export default function AdminCases({
                 />
               </div>
             )}
-
             {/* Filters - Desktop: Inline, Mobile: Button */}
             {mergedConfig.enableFilters && (
               <>
@@ -572,7 +527,6 @@ export default function AdminCases({
                     </SelectContent>
                   </Select>
                 </div>
-
                 {/* Mobile Filter Button */}
                 <div className="sm:hidden flex items-center justify-between">
                   <div className="flex items-center gap-2 text-sm text-gray-600">
@@ -680,9 +634,6 @@ export default function AdminCases({
         </div>
       )}
 
-      {/* Rest of the component remains the same... */}
-      {/* Mobile Filter Panel, Case Form Dialog, Case Details Dialog, etc. */}
-
       {/* Mobile-Optimized Case Form Dialog */}
       <Dialog open={showCaseDialog} onOpenChange={setShowCaseDialog}>
         <DialogContent className="w-[95vw] max-w-4xl max-h-[90vh] overflow-y-auto mx-auto">
@@ -697,12 +648,10 @@ export default function AdminCases({
               }
             </DialogDescription>
           </DialogHeader>
-
           <div className="space-y-4 sm:space-y-6">
             {/* Basic Information */}
             <div className="space-y-3 sm:space-y-4">
               <h3 className="text-base sm:text-lg font-medium border-b pb-2">Basic Information</h3>
-
               <div className="space-y-3 sm:space-y-4">
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
                   <div className="space-y-2">
@@ -715,7 +664,6 @@ export default function AdminCases({
                       className="w-full text-sm"
                     />
                   </div>
-
                   <div className="space-y-2">
                     <Label htmlFor="type" className="text-sm">Case Type *</Label>
                     <Select
@@ -733,7 +681,6 @@ export default function AdminCases({
                     </Select>
                   </div>
                 </div>
-
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
                   <div className="space-y-2">
                     <Label htmlFor="priority" className="text-sm">Priority</Label>
@@ -752,7 +699,6 @@ export default function AdminCases({
                       </SelectContent>
                     </Select>
                   </div>
-
                   <div className="space-y-2">
                     <Label htmlFor="duration" className="text-sm">Estimated Duration (days)</Label>
                     <Input
@@ -769,7 +715,6 @@ export default function AdminCases({
                     />
                   </div>
                 </div>
-
                 <div className="space-y-2">
                   <Label htmlFor="description" className="text-sm">Case Description *</Label>
                   <Textarea
@@ -783,11 +728,9 @@ export default function AdminCases({
                 </div>
               </div>
             </div>
-
             {/* Case Parties - Mobile Optimized */}
             <div className="space-y-3 sm:space-y-4">
               <h3 className="text-base sm:text-lg font-medium border-b pb-2">Case Parties</h3>
-
               <div className="space-y-4 sm:space-y-6">
                 {/* Mobile: Stacked, Desktop: Side by side */}
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
@@ -801,7 +744,6 @@ export default function AdminCases({
                     label="Plaintiffs"
                     colorScheme="blue"
                   />
-
                   {/* Defendants */}
                   <PartyFormSection
                     parties={caseForm.defendants}
@@ -815,7 +757,6 @@ export default function AdminCases({
                 </div>
               </div>
             </div>
-
             {/* Mobile-Optimized Action Buttons */}
             <div className="flex flex-col-reverse sm:flex-row justify-end gap-2 sm:gap-3 pt-4 sm:pt-6 border-t">
               <Button
@@ -893,7 +834,6 @@ export default function AdminCases({
               )}
             </div>
           </DialogHeader>
-
           {selectedCase && (
             <div className="space-y-4 sm:space-y-6">
               <ProcessStageManager
@@ -946,7 +886,6 @@ export default function AdminCases({
                     )}
                   </div>
                 </Card>
-
                 <Card className="p-3 sm:p-4">
                   <h4 className="font-semibold mb-2 sm:mb-3 text-green-700 flex items-center gap-2 text-sm sm:text-base">
                     <Calendar className="w-3 h-3 sm:w-4 sm:h-4" />
@@ -992,7 +931,6 @@ export default function AdminCases({
                     )}
                   </div>
                 </Card>
-
                 <Card className="p-3 sm:p-4 sm:col-span-2 lg:col-span-1">
                   <h4 className="font-semibold mb-2 sm:mb-3 text-purple-700 flex items-center gap-2 text-sm sm:text-base">
                     <Gavel className="w-3 h-3 sm:w-4 sm:h-4" />
@@ -1018,13 +956,11 @@ export default function AdminCases({
                   </div>
                 </Card>
               </div>
-
               {/* Case Description */}
               <Card className="p-4 sm:p-6">
                 <h4 className="font-semibold mb-3 text-gray-800 text-sm sm:text-base">Case Description</h4>
                 <p className="text-gray-700 leading-relaxed text-sm sm:text-base">{selectedCase.description}</p>
               </Card>
-
               {/* Case Parties - Mobile Stacked */}
               <div className="space-y-4 sm:space-y-0 sm:grid sm:grid-cols-1 lg:grid-cols-2 sm:gap-6">
                 <Card className="p-4 sm:p-6">
@@ -1055,7 +991,6 @@ export default function AdminCases({
                     ))}
                   </div>
                 </Card>
-
                 <Card className="p-4 sm:p-6">
                   <h4 className="font-semibold mb-3 sm:mb-4 text-red-700 flex items-center gap-2 text-sm sm:text-base">
                     <Users className="w-3 h-3 sm:w-4 sm:h-4" />
@@ -1085,7 +1020,6 @@ export default function AdminCases({
                   </div>
                 </Card>
               </div>
-
               {/* Tags */}
               {selectedCase.tags.length > 0 && (
                 <Card className="p-4 sm:p-6">
@@ -1099,7 +1033,6 @@ export default function AdminCases({
                   </div>
                 </Card>
               )}
-
               {selectedCaseForHistory && (
                 <CaseTimeline
                   caseItem={selectedCaseForHistory}

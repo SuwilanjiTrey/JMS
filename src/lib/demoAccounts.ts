@@ -50,6 +50,22 @@ export const DEMO_ACCOUNTS = {
       bio: 'Senior Advocate with expertise in civil litigation'
     }
   },
+  
+  
+	registrar: {
+	  email: 'registrar@demo.com',
+	  password: 'password',
+	  role: 'registrar' as UserRole,
+	  displayName: 'Demo Registrar'
+	},
+	clerk: {
+	  email: 'clerk@demo.com',
+	  password: 'password',
+	  role: 'clerk' as UserRole,
+	  displayName: 'Demo Clerk'
+	}
+	  
+  ,
   public: {
     email: 'public@courts.gov.zm',
     password: 'public123',

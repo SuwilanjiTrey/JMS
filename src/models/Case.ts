@@ -5,6 +5,8 @@ export type CaseStatus = 'filed' | 'summons' | 'takes_off' | 'recording' | 'adjo
 export type CasePriority = 'low' | 'medium' | 'high' | 'urgent';
 export type CaseType = 'civil' | 'criminal' | 'family' | 'commercial' | 'constitutional' | 'other';
 
+
+
 // New interface for case status history
 export interface CaseStatusHistory {
   id: string;
@@ -13,6 +15,7 @@ export interface CaseStatusHistory {
   newStatus: CaseStatus;
   changedBy: string; // User ID
   changedAt: Date;
+  status: CaseStatus;
   reason?: string;
   notes?: string;
   documents?: string[]; // Document IDs related to status change
@@ -207,3 +210,24 @@ export const CASE_TYPE_LABELS: Record<CaseType, string> = {
   constitutional: 'Constitutional',
   other: 'Other'
 };
+
+
+export interface CaseProcessStage {
+  id: string;
+  caseId: string;
+  stage: CaseProcessStageType;
+  date: Date;
+  completedBy?: string; // User ID
+  notes?: string;
+  documents?: string[]; // Document IDs
+}
+
+export type CaseProcessStageType =
+  | 'filed'
+  | 'summons'
+  | 'takes_off'
+  | 'recording'
+  | 'adjournment'
+  | 'ruling'
+  | 'appeal';
+

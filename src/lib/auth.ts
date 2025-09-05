@@ -40,6 +40,9 @@ const courtTypes = [
   { value: 'supreme-court', label: 'Supreme Court' }
 ];
 
+
+
+
 // Law firm management functions
 export const createLawFirm = async (firmData: {
   name: string;
@@ -509,19 +512,18 @@ const createOrUpdateCourtRecord = async (userId: string, userData: UserCreationD
 };
 
 // Updated logout function
+// lib/auth.ts
+// Update the logoutUser function
 export const logoutUser = async (): Promise<void> => {
   try {
-    // Check if it's a demo user
-    const isDemoUser = localStorage.getItem('isDemoUser') === 'true';
+    // Clear localStorage
+    localStorage.removeItem('user');
+    localStorage.removeItem('token');
+    localStorage.removeItem('isDemoUser');
     
-    if (isDemoUser) {
-      // Just clear localStorage for demo users
-      localStorage.removeItem('isDemoUser');
-      localStorage.removeItem('demoUserData');
-      localStorage.removeItem('userRole');
-      localStorage.removeItem('userName');
-    } else {
-      // Sign out from Firebase for real users
+    // Sign out from Firebase if it's a real user
+    const isDemoUser = localStorage.getItem('isDemoUser') === 'true';
+    if (!isDemoUser) {
       await signOut(auth);
     }
   } catch (error) {
@@ -547,19 +549,32 @@ export const resetPassword = async (email: string): Promise<void> => {
 };
 
 // Updated getCurrentUser function
+// lib/auth.ts
+// Update the getCurrentUser function
 export const getCurrentUser = async (): Promise<User | null> => {
   // Check if it's a demo user first
   const isDemoUser = localStorage.getItem('isDemoUser') === 'true';
   if (isDemoUser) {
-    const demoUserData = localStorage.getItem('demoUserData');
+    const demoUserData = localStorage.getItem('user');
     if (demoUserData) {
       try {
         return JSON.parse(demoUserData);
       } catch (error) {
         console.error('Error parsing demo user data:', error);
         localStorage.removeItem('isDemoUser');
-        localStorage.removeItem('demoUserData');
+        localStorage.removeItem('user');
       }
+    }
+  }
+  
+  // Check for stored user data
+  const userData = localStorage.getItem('user');
+  if (userData) {
+    try {
+      return JSON.parse(userData);
+    } catch (error) {
+      console.error('Error parsing user data:', error);
+      localStorage.removeItem('user');
     }
   }
   
@@ -870,28 +885,102 @@ export const removeJudgeFromCourt = async (courtId: string, judgeId: string) => 
 };
 
 // Case management functions
+// lib/auth.ts
+// Update the createCase function
 export const createCase = async (caseData: {
   title: string;
   description: string;
-  caseNumber: string;
-  courtId: string;
-  judgeId?: string;
-  plaintiff: string;
-  defendant: string;
-  filingDate: Date;
-  status: 'pending' | 'active' | 'closed' | 'appealed';
+  type: 'civil' | 'criminal' | 'family' | 'commercial' | 'constitutional' | 'other';
   priority: 'low' | 'medium' | 'high' | 'urgent';
+  plaintiffs: Omit<CaseParty, 'id'>[];
+  defendants: Omit<CaseParty, 'id'>[];
+  lawyers?: Omit<CaseLawyer, 'id' | 'assignedAt' | 'isActive'>[];
+  estimatedDuration?: number;
+  tags?: string[];
+  courtId: string;
+  createdBy: string;
 }) => {
   try {
     const casesRef = collection(db, COLLECTIONS.CASES);
-    const newCase = {
-      ...caseData,
-      createdAt: serverTimestamp(),
-      updatedAt: serverTimestamp(),
-      isActive: true
+    
+    // Generate a unique case number
+    const caseNumber = `CV-${new Date().getFullYear()}-${Math.floor(Math.random() * 10000).toString().padStart(4, '0')}`;
+    
+    // Create new case object
+    const newCase: Omit<Case, 'id'> = {
+      caseNumber,
+      title: caseData.title,
+      description: caseData.description,
+      type: caseData.type,
+      status: 'filed', // Initial status
+      priority: caseData.priority,
+      createdAt: new Date(),
+      updatedAt: new Date(),
+      createdBy: caseData.createdBy,
+      plaintiffs: caseData.plaintiffs.map(p => ({
+        ...p,
+        id: `party-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`
+      })),
+      defendants: caseData.defendants.map(d => ({
+        ...d,
+        id: `party-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`
+      })),
+      lawyers: caseData.lawyers?.map(l => ({
+        ...l,
+        id: `lawyer-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+        assignedAt: new Date(),
+        isActive: true
+      })) || [],
+      hearings: [],
+      documents: [],
+      rulings: [],
+      tags: caseData.tags || [],
+      estimatedDuration: caseData.estimatedDuration,
+      statusHistory: [{
+        id: `history-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+        caseId: '', // Will be set after document creation
+        previousStatus: undefined,
+        newStatus: 'filed',
+        changedBy: caseData.createdBy,
+        changedAt: new Date(),
+        status: 'filed',
+        notes: 'Case filed'
+      }],
+      timeline: [{
+        id: `event-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+        caseId: '', // Will be set after document creation
+        type: 'status_change',
+        title: 'Case Filed',
+        description: `Case ${caseNumber} has been filed`,
+        createdAt: new Date(),
+        createdBy: caseData.createdBy,
+        metadata: {
+          previousValue: undefined,
+          newValue: 'filed'
+        }
+      }]
     };
     
-    const docRef = await addDoc(casesRef, newCase);
+    // Add case to Firestore
+    const docRef = await addDoc(casesRef, {
+      ...newCase,
+      createdAt: serverTimestamp(),
+      updatedAt: serverTimestamp()
+    });
+    
+    // Update status history and timeline with case ID
+    const updatedCase = {
+      ...newCase,
+      id: docRef.id,
+      statusHistory: newCase.statusHistory.map(h => ({
+        ...h,
+        caseId: docRef.id
+      })),
+      timeline: newCase.timeline.map(t => ({
+        ...t,
+        caseId: docRef.id
+      }))
+    };
     
     // Add case to court
     const courtRef = doc(db, COLLECTIONS.COURTS, caseData.courtId);
@@ -909,15 +998,14 @@ export const createCase = async (caseData: {
     
     return {
       id: docRef.id,
-      ...newCase,
-      createdAt: new Date(),
-      updatedAt: new Date()
+      ...updatedCase
     };
   } catch (error) {
     console.error('Error creating case:', error);
     throw error;
   }
 };
+
 
 export const getCasesByCourt = async (courtId: string) => {
   try {
@@ -1061,6 +1149,56 @@ export const createCalendarEvent = async (eventData: {
     };
   } catch (error) {
     console.error('Error creating calendar event:', error);
+    throw error;
+  }
+};
+
+// Add a function to get or create a court
+export const getOrCreateCourt = async (courtType: string, courtLocation: string) => {
+  try {
+    // Generate court ID
+    const courtId = `${courtType}-${courtLocation.toLowerCase().replace(/\s+/g, '-')}`;
+    
+    // Try to get the court
+    const courtRef = doc(db, COLLECTIONS.COURTS, courtId);
+    const courtDoc = await getDoc(courtRef);
+    
+    if (courtDoc.exists()) {
+      // Court exists, return it
+      const data = courtDoc.data();
+      return {
+        id: courtId,
+        ...data,
+        createdAt: data.createdAt?.toDate() || new Date(),
+        updatedAt: data.updatedAt?.toDate() || new Date()
+      };
+    } else {
+      // Court doesn't exist, create it
+      const courtName = `${courtTypes.find(c => c.value === courtType)?.label || courtType} - ${courtLocation}`;
+      
+      const newCourt = {
+        id: courtId,
+        type: courtType,
+        location: courtLocation,
+        name: courtName,
+        judges: [],
+        administrators: [],
+        cases: [],
+        createdAt: serverTimestamp(),
+        updatedAt: serverTimestamp(),
+        isActive: true
+      };
+      
+      await setDoc(courtRef, newCourt);
+      
+      return {
+        ...newCourt,
+        createdAt: new Date(),
+        updatedAt: new Date()
+      };
+    }
+  } catch (error) {
+    console.error('Error getting or creating court:', error);
     throw error;
   }
 };

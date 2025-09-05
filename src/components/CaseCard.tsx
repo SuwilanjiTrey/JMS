@@ -3,6 +3,9 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 <<<<<<< HEAD
+<<<<<<< HEAD
+=======
+>>>>>>> 2b0ef7e34493758c956b2369967a1941a17def83
 import { Calendar, Clock, User, FileText, MoreHorizontal, Eye, Edit, History } from 'lucide-react';
 import { Case, CaseStatus, CasePriority, CaseType } from '@/models';
 import { format } from 'date-fns';
@@ -355,6 +358,9 @@ export default function CaseCard({
             </div>
           )}
 <<<<<<< HEAD
+<<<<<<< HEAD
+=======
+>>>>>>> 2b0ef7e34493758c956b2369967a1941a17def83
           {/** Div that centers its children */}
           <div className="flex justify-center">
             <Button

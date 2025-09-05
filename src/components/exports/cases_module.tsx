@@ -28,12 +28,9 @@ import {
   Trash2,
   Filter,
   MoreVertical,
-<<<<<<< HEAD
-  History
-=======
+
   History,
   MoreHorizontal
->>>>>>> a0af6fa6dce3584581274ea880ddffa33bcbc4ba
 } from 'lucide-react';
 import {
   DropdownMenu,
@@ -247,18 +244,25 @@ const MobileFilterPanel = ({
 
 <<<<<<< HEAD
 // Mobile-optimized Case Card Component
+<<<<<<< HEAD
 =======
 // Enhanced Mobile-optimized Case Card Component with Case History Integration
 >>>>>>> a0af6fa6dce3584581274ea880ddffa33bcbc4ba
+=======
+>>>>>>> 2b0ef7e34493758c956b2369967a1941a17def83
 const CaseCard = ({
   caseItem,
   onView,
   onEdit,
   onStatusUpdate,
 <<<<<<< HEAD
+<<<<<<< HEAD
   onViewHistory,  
 =======
 >>>>>>> a0af6fa6dce3584581274ea880ddffa33bcbc4ba
+=======
+  onViewHistory,  
+>>>>>>> 2b0ef7e34493758c956b2369967a1941a17def83
   submitting,
   config,
   customActions = []

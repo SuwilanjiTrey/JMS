@@ -9,10 +9,8 @@
     "build": "next build",
     "start": "next start",
     "lint": "next lint",
-    "db:push": "prisma db push",
-    "db:generate": "prisma generate",
-    "db:migrate": "prisma migrate dev",
-    "db:reset": "prisma migrate reset",
+    "db:example": "tsx examples/database-usage.ts",
+    "db:migrate": "tsx scripts/migrate.ts",
     "predeploy": "npm run build",
     "deploy": "gh-pages -d out"
   },

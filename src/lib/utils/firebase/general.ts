@@ -50,7 +50,7 @@ const removeUndefinedFields = (obj: any): any => {
 };
 
 
-export async function uploadData(collectionName: string, data: any): Promise<boolean> {
+async function uploadData(collectionName: string, data: any): Promise<boolean> {
     let uploaded = false
     try {
         // Clean the data before uploading
@@ -64,7 +64,7 @@ export async function uploadData(collectionName: string, data: any): Promise<boo
     return uploaded
 }
 
-export async function setDetails(item: any, collectionName: string, id: string | number) {
+async function setDetails(item: any, collectionName: string, id: string | number) {
     if (!collectionName || !id) {
         console.error("Collection name or document ID is missing.");
         return { success: false, error: "Invalid collection name or document ID." };
@@ -97,7 +97,7 @@ export async function setDetails(item: any, collectionName: string, id: string |
  * @param {string} documentId - The ID of the document to delete.
  * @returns {Promise<{ success: boolean, error?: string }>} - Result of the deletion operation.
  */
-export async function deleteData(
+async function deleteData(
     collectionName: string,
     documentId: string | number
 ): Promise<{ success: boolean, error?: string }> {
@@ -127,7 +127,7 @@ export async function deleteData(
 }
 
 
-export async function fetchData(collectionName: string, count?: number) {
+async function fetchData(collectionName: string, count?: number) {
     const querySnapshot = await getDocs(collection(db, collectionName));
     let data: any[] = [] //
 
@@ -148,7 +148,7 @@ export async function fetchData(collectionName: string, count?: number) {
     return data
 }
 
-export async function setDetailsOfMany(items: any[], collectionName: string) {
+async function setDetailsOfMany(items: any[], collectionName: string) {
     let success = true;
     let errors: string[] = [];
 
@@ -167,7 +167,7 @@ export async function setDetailsOfMany(items: any[], collectionName: string) {
 }
 
 
-export async function getOne(id: string | number, collectionName: string) {
+async function getOne(id: string | number, collectionName: string) {
     // get one doc from the specified collection
     try {
         const docRef = doc(db, collectionName, `${id}`);
@@ -183,7 +183,7 @@ export async function getOne(id: string | number, collectionName: string) {
     }
 }
 
-export async function getLimitedMany(limitNumber: number, collectionName: string) {
+async function getLimitedMany(limitNumber: number, collectionName: string) {
     // get a limited number of docs from the specified collection
     try {
         const q = query(collection(db, collectionName), limit(limitNumber));
@@ -196,7 +196,7 @@ export async function getLimitedMany(limitNumber: number, collectionName: string
     }
 }
 
-export async function getAll(collectionName: string) {
+async function getAll(collectionName: string) {
     // get all docs from the specified collection
     try {
         const querySnapshot = await getDocs(collection(db, collectionName));
@@ -208,7 +208,7 @@ export async function getAll(collectionName: string) {
     }
 }
 
-export async function getAllWhereEquals(collectionName: string, attributeName: string, value: any) {
+async function getAllWhereEquals(collectionName: string, attributeName: string, value: any) {
     // get all docs from the specified collection where attribute equals value
     try {
         const q = query(collection(db, collectionName), where(attributeName, "==", value));
@@ -220,3 +220,18 @@ export async function getAllWhereEquals(collectionName: string, attributeName: s
         throw error;
     }
 }
+
+
+export {
+    uploadData,
+    setDetails,
+    setDetailsOfMany,
+    deleteData,
+    getOne,
+    getAll,
+    getAllWhereEquals,
+    queryDocuments,
+    countDocuments,
+    updateDocument,
+    deleteMany
+} from '@/lib/database/crud';

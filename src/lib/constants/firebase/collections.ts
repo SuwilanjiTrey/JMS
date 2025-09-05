@@ -11,9 +11,6 @@ export const COLLECTIONS = {
   AUDIT_LOGS: 'audit_logs',
   LAW_FIRMS: 'lawFirms',
   CALENDAR_EVENTS: 'calendarEvents',
-
-  AUDIT_LOGS: 'audit_logs',
-
   NOTIFICATIONS: 'notifications',
   CALENDAR: 'calendar',
   SEQUENCES: 'sequences',
@@ -23,6 +20,7 @@ export const COLLECTIONS = {
   PARLIAMENT_UPDATES: 'parliamentUpdates',
     CASE_STATUS_HISTORY: 'case_status_history', 
   CASE_PROCESS_STAGES: 'case_process_stages', 
+  CASE_EVENTS: 'case_events'
 } as const;
 
 

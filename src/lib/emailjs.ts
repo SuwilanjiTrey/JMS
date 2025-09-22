@@ -2,9 +2,7 @@
 import emailjs from '@emailjs/browser';
 
 // Initialize EmailJS with your service ID, template ID, and user ID
-const SERVICE_ID = 'service_8odly68';
-const TEMPLATE_ID = 'template_8wmn8nn';
-const USER_ID = 'J7BxtF4iXZEngFd3i';
+
 // Send OTP email
 export const sendOTPEmail = async (email: string, otp: string, name: string): Promise<boolean> => {
   try {
